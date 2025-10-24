@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>5 o’clock Tea — Shop</title>
+<meta name="description" content="One-page shop for 5 o’clock Tea. Order via LINE or Email." />
+
+<!-- Stubs: глушим внешние init.js/web.js, если вдруг подгружаются -->
+<script>window.applyCursorStyle=window.applyCursorStyle||function(){};window.initCursorStyleOnLoad=window.initCursorStyleOnLoad||function(){};</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --brand:#111; }
+  .logo { font-family: 'Playfair Display', serif; letter-spacing: .02em; }
+  .text-sans { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; }
+  .card { border-radius: 1.1rem; box-shadow: 0 10px 24px rgba(0,0,0,.08); }
+  .btn { transition: transform .04s ease; }
+  .btn:active { transform: translateY(1px); }
+  @media (max-width: 640px){
+    .hero-wrap { padding-top: 2.75rem; padding-bottom: 2.75rem; }
+    .prod-figure { height: 280px; }
+    .touch-target { padding-top:.9rem; padding-bottom:.9rem; }
+    /* место под нижнюю панель */
+    body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
+  }
+  /* плавающая кнопка корзины над нижней панелью */
+  #fabCart { position: fixed; right: 16px; bottom: 88px; z-index: 60; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
+  /* фикс-панель внизу (мобилка) */
+  #mobileBar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+               background: rgba(255,255,255,.95); backdrop-filter: blur(10px);
+               box-shadow: 0 -8px 24px rgba(0,0,0,.12); }
+</style>
+</head>
+<body class="text-sans bg-[#faf8f5] text-zinc-800">
+<header class="sticky top-0 z-40 backdrop-blur bg-[#faf8f5]/85 border-b border-zinc-200/60">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-3"><span class="logo text-2xl font-semibold">5 o’clock</span></a>
+    <nav class="hidden sm:flex items-center gap-6 text-sm">
+      <a href="#shop" class="hover:underline">Shop</a>
+      <a href="#about" class="hover:underline">About</a>
+      <a href="#contact" class="hover:underline">Contact</a>
+    </nav>
+    <button id="openCart" class="btn relative px-4 py-2 rounded-full bg-black text-white text-sm font-medium touch-target">
+      Cart <span id="cartCount" class="ml-2 inline-flex items-center justify-center w-5 h-5 text-[11px] rounded-full bg-white text-black">0</span>
+    </button>
+  </div>
+</header>
+
+<section class="bg-gradient-to-br from-amber-100 to-zinc-100">
+  <div class="max-w-6xl mx-auto px-4 hero-wrap">
+    <div class="bg-white/85 backdrop-blur card p-5 sm:p-10 max-w-2xl">
+      <h1 class="logo text-[2rem] sm:text-5xl leading-tight">Morning tea, crafted with love.</h1>
+      <p class="mt-3 text-zinc-700 text-[15px] sm:text-base">Small-batch blends made in Thailand. Order fast via LINE or Email.</p>
+      <div class="flex flex-col sm:flex-row gap-3 mt-5">
+        <a href="#shop" class="inline-block px-6 py-3 rounded-full bg-black text-white text-sm font-semibold text-center">Browse teas</a>
+        <a href="#contact" class="inline-block px-6 py-3 rounded-full bg-white text-zinc-800 border text-sm font-semibold text-center">Contact</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="shop" class="py-10 sm:py-14">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex items-end justify-between gap-4 mb-6">
+      <h2 class="logo text-2xl sm:text-3xl">Shop teas</h2>
+      <div class="text-sm text-zinc-600">All prices in THB</div>
+    </div>
+    <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6" id="productGrid"></div>
+  </div>
+</section>
+
+<section id="about" class="py-10 sm:py-12 border-t border-zinc-200/70">
+  <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-6 sm:gap-10 items-center">
+    <div class="rounded-2xl shadow bg-[url('images/hero.jpg')] bg-cover bg-center min-h-[200px] sm:min-h-[260px]"></div>
+    <div>
+      <h3 class="logo text-xl sm:text-2xl">About 5 o’clock</h3>
+      <p class="mt-3 leading-relaxed text-[15px] sm:text-base">We’re a family-run tea brand in Bangkok. This lightweight site runs without a backend. Swap images in <code>/images</code>, update product prices inline.</p>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="py-10 sm:py-12 border-t border-zinc-200/70">
+  <div class="max-w-6xl mx-auto px-4 text-center">
+    <h3 class="logo text-xl sm:text-2xl">Questions or wholesale?</h3>
+    <div class="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a id="lineMain" href="https://line.me/R/ti/p/@924uwcib" target="_blank" class="btn px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold w-full sm:w-auto touch-target">LINE</a>
+      <a href="mailto:5OCLOCK@GMAIL.COM" class="btn px-5 py-3 rounded-full bg-black text-white text-sm font-semibold w-full sm:w-auto touch-target">Email: 5OCLOCK@GMAIL.COM</a>
+    </div>
+    <p class="mt-3 text-xs text-zinc-500">LINE ID: <strong>@924uwcib</strong></p>
+  </div>
+</section>
+
+<!-- Floating Cart (mobile) -->
+<button id="fabCart" class="sm:hidden btn rounded-full bg-black text-white px-5 py-3">
+  Cart · <span id="fabCount">0</span>
+</button>
+
+<!-- Fixed bottom bar (mobile) -->
+<div id="mobileBar" class="sm:hidden px-4 py-3 flex items-center justify-between">
+  <div class="text-sm">
+    <div class="font-semibold">Subtotal</div>
+    <div id="mobileSubtotal">THB 0</div>
+  </div>
+  <button id="mobileCheckoutBtn" class="btn bg-[#00c300] text-white px-5 py-3 rounded-full text-sm font-semibold">Checkout</button>
+</div>
+
+<!-- Cart drawer -->
+<div id="cartDrawer" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/40" id="closeCart"></div>
+  <aside class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl p-6 pb-safe flex flex-col">
+    <div class="flex items-center justify-between">
+      <h4 class="logo text-2xl">Your Cart</h4>
+      <button id="closeCartBtn" class="btn p-2 rounded-full hover:bg-zinc-100" aria-label="Close">✕</button>
+    </div>
+    <div id="cartItems" class="mt-4 flex-1 overflow-auto divide-y"></div>
+    <div class="pt-4 space-y-3">
+      <div class="flex items-center justify-between text-lg"><span>Subtotal</span><strong id="cartSubtotal">THB 0</strong></div>
+      <div id="shippingRow" class="flex items-center justify-between text-sm">
+        <span>Shipping (estimate)</span><strong id="shippingCost">THB 0</strong>
+      </div>
+      <div class="grid grid-cols-1 gap-3 pt-1">
+        <div><label for="custName" class="text-sm font-medium">Name</label><input id="custName" type="text" inputmode="text" autocomplete="name" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Your full name"></div>
+        <div><label for="custPhone" class="text-sm font-medium">Phone number</label><input id="custPhone" type="tel" inputmode="tel" autocomplete="tel" class="w-full border rounded-lg p-3 text-[15px]" placeholder="+66 ..."></div>
+        <div><label for="address" class="text-sm font-medium">Delivery address</label><input id="address" type="text" autocomplete="street-address" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Street, district, Bangkok, ZIP" /><p id="bkkNote" class="text-xs text-amber-700 mt-1 hidden">Delivery in Bangkok only / จัดส่งเฉพาะในกรุงเทพฯ</p></div>
+      </div>
+      <div class="flex items-center justify-between text-lg"><span>Total</span><strong id="cartTotal">THB 0</strong></div>
+      <button id="checkoutBtn" class="btn block w-full px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Send order via LINE</button>
+      <a id="emailBtn" href="mailto:5OCLOCK@GMAIL.COM" class="btn block w-full px-5 py-3 rounded-full bg-black text-white text-sm font-semibold text-center">Or send by Email</a>
+      <p class="text-xs text-zinc-500">We’ll confirm delivery & payment in chat.</p>
+    </div>
+  </aside>
+</div>
+
+<footer class="py-10 text-center text-sm text-zinc-500">© <span id="year"></span> 5 o’clock Tea — Bangkok</footer>
+
+<script>
+// ================== CONFIG ==================
+const CONFIG = {
+  currency: 'THB',
+  lineId: '@924uwcib',
+  freeShippingThreshold: 500,
+  shippingCalc: {
+    pickupAddress: "Bangkok, Ramkhamkhaeng 2, Indy 38/71",
+    baseTHB: 50,
+    perKm_0_5: 0,
+    perKm_5_15: 10,
+    perKm_15p: 15,
+    minChargeTHB: 0
+  },
+  products: [
+    { id: 'wild-cherry', name: 'Wild Cherry', img: 'images/wild-cherry.jpg',
+      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
+      desc: 'Black tea with cherry notes — bright and aromatic.' },
+    { id: 'taiga-blend', name: 'Taiga Blend', img: 'images/taiga-blend.jpg',
+      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
+      desc: 'Black tea, berries & forest vibes. Cozy and bold.' },
+    { id: 'rose-strawberry', name: 'Rose Strawberry Fruit Tea', img: 'images/rose-strawberry.jpg',
+      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
+      desc: 'Black tea with apples, chokeberry, strawberry & rose petals.' },
+    { id: 'rose-hibiscus', name: 'Rose Hibiscus Fruit Tea', img: 'images/rose-hibiscus.jpg',
+      options: [ { label: '50 g', price: 195 } ],
+      desc: 'Hibiscus, rose petals & berries for a ruby-red infusion.',
+      outOfStock: true },
+    { id: 'citrus-orange', name: 'Citrus Orange Fruit Tea', img: 'images/citrus-orange.jpg',
+      options: [ { label: '50 g', price: 195 } ],
+      desc: 'Sun-dried oranges, apples & hibiscus for a refreshing citrus aroma.',
+      outOfStock: true },
+    { id: 'strawberries-cream', name: 'Strawberries & Cream', img: 'images/strawberries-cream.jpg',
+      options: [ { label: '50 g', price: 195 } ],
+      desc: 'Black tea with strawberry pieces, goji berries & candied pineapple.' }
+  ]
+};
+function fmt(v){ return CONFIG.currency + ' ' + Number(v).toLocaleString('en-US'); }
+
+// ================== PRODUCTS ==================
+(function renderProducts(){
+  var grid = document.getElementById('productGrid');
+  CONFIG.products.forEach(function(p){
+    var card = document.createElement('article');
+    card.className = 'card bg-white overflow-hidden flex flex-col h-full';
+    var figure = document.createElement('div');
+    figure.className = 'prod-figure w-full h-[320px] sm:h-[340px] bg-[#f9f6ef] flex items-center justify-center';
+    var img = document.createElement('img');
+    img.src = p.img; img.alt = p.name; img.className = 'w-full h-full object-contain p-2';
+    img.onerror = function(){ this.src = 'https://placehold.co/600x600?text=' + encodeURIComponent(p.name); };
+    figure.appendChild(img);
+    card.appendChild(figure);
+
+    var body = document.createElement('div');
+    body.className = 'p-5 flex flex-col h-full';
+    var h3 = document.createElement('h3');
+    h3.className = 'logo text-lg sm:text-xl'; h3.textContent = p.name;
+    body.appendChild(h3);
+
+    if (p.outOfStock){
+      var badge = document.createElement('p');
+      badge.className = 'text-purple-700 text-sm mt-1 font-semibold';
+      badge.textContent = 'Preorder only';
+      body.appendChild(badge);
+    }
+
+    var desc = document.createElement('p');
+    desc.className = 'mt-1 text-sm text-zinc-600'; desc.textContent = p.desc;
+    body.appendChild(desc);
+
+    var row = document.createElement('div');
+    row.className = 'mt-3 flex items-center gap-3';
+    var label = document.createElement('label');
+    label.className = 'text-sm'; label.textContent = 'Size';
+    var select = document.createElement('select');
+    select.className = 'sizeSel border rounded-full px-3 py-2 text-sm';
+    select.innerHTML = p.options.map(function(o,i){
+      return '<option value="'+i+'">'+o.label+' — '+fmt(o.price)+'</option>';
+    }).join('');
+    row.appendChild(label); row.appendChild(select);
+    body.appendChild(row);
+
+    var btn = document.createElement('button');
+    btn.dataset.id = p.id;
+    btn.className = 'btn addBtn mt-auto w-full px-4 py-3 rounded-full text-sm font-semibold ' + (p.outOfStock ? 'bg-purple-600 text-white' : 'bg-black text-white');
+    btn.disabled = false;
+    btn.textContent = p.outOfStock ? 'Preorder' : 'Add to cart';
+    body.appendChild(btn);
+
+    card.appendChild(body); grid.appendChild(card);
+  });
+})();
+
+// ================== CART + SHIPPING ==================
+var cart = [];
+var cartCount = document.getElementById('cartCount');
+var fabCount = document.getElementById('fabCount');
+var cartSubtotal = document.getElementById('cartSubtotal');
+var cartTotal = document.getElementById('cartTotal');
+var shippingCostEl = document.getElementById('shippingCost');
+var shippingRow = document.getElementById('shippingRow');
+var cartItems = document.getElementById('cartItems');
+var openCart = document.getElementById('openCart');
+var fabCart = document.getElementById('fabCart');
+var mobileCheckoutBtn = document.getElementById('mobileCheckoutBtn');
+var mobileSubtotal = document.getElementById('mobileSubtotal');
+var cartDrawer = document.getElementById('cartDrawer');
+var closeCart = document.getElementById('closeCart');
+var closeCartBtn = document.getElementById('closeCartBtn');
+var checkoutBtn = document.getElementById('checkoutBtn');
+var emailBtn = document.getElementById('emailBtn');
+
+const state = { shippingTHB: null, distanceKm: null, recalcTimer: null };
+
+function debounce(fn, ms) {
+  return function(){
+    clearTimeout(state.recalcTimer);
+    var ctx = this, args = arguments;
+    state.recalcTimer = setTimeout(function(){ fn.apply(ctx, args); }, ms);
+  };
+}
+
+async function recalcShippingByDistance(subtotalTHB) {
+  try {
+    var addressEl = document.getElementById('address');
+    var dst = (addressEl && addressEl.value ? addressEl.value : "").trim();
+    if (!dst) { state.shippingTHB = null; state.distanceKm = null; return; }
+    if (subtotalTHB >= CONFIG.freeShippingThreshold) {
+      state.shippingTHB = 0; state.distanceKm = null; return;
+    }
+    var svc = new google.maps.DistanceMatrixService();
+    var result = await new Promise(function(resolve, reject){
+      svc.getDistanceMatrix({
+        origins: [CONFIG.shippingCalc.pickupAddress],
+        destinations: [dst],
+        travelMode: google.maps.TravelMode.DRIVING
+      }, function(resp, status){ (status === 'OK') ? resolve(resp) : reject(status); });
+    });
+    var elem = result && result.rows && result.rows[0] && result.rows[0].elements && result.rows[0].elements[0];
+    var meters = (elem && elem.distance && elem.distance.value) ? elem.distance.value : 0;
+    var km = meters / 1000;
+    state.distanceKm = km;
+    var sc = CONFIG.shippingCalc;
+    var fare = sc.baseTHB;
+    if (km > 15) {
+      fare += (15 - 5) * sc.perKm_5_15 + (km - 15) * sc.perKm_15p;
+    } else if (km > 5) {
+      fare += (km - 5) * sc.perKm_5_15;
+    } else {
+      fare += km * sc.perKm_0_5;
+    }
+    if (sc.minChargeTHB > 0) fare = Math.max(fare, sc.minChargeTHB);
+    state.shippingTHB = Math.round(fare / 5) * 5;
+  } catch(e) {
+    console.warn('Distance/Shipping calc failed:', e);
+    state.shippingTHB = null;
+  }
+}
+
+var scheduleShippingRecalc = debounce(async function(){
+  var subtotal = cart.filter(function(i){ return i.id!=='delivery'; }).reduce(function(s,i){ return s + i.price*i.qty; }, 0);
+  await recalcShippingByDistance(subtotal);
+  updateCart();
+}, 350);
+
+function estimateShipping(subtotal){
+  if ((Number(subtotal)||0) >= CONFIG.freeShippingThreshold) return 0;
+  if (typeof state.shippingTHB === 'number') return state.shippingTHB;
+  return 70; // fallback while ждём Distance Matrix
+}
+
+function updateCart(){
+  cartItems.innerHTML = '';
+  var subtotal = 0;
+  for (var i=0;i<cart.length;i++){ if (cart[i].id!=='delivery') subtotal += cart[i].price * cart[i].qty; }
+
+  // асинхронный пересчёт доставки по адресу
+  scheduleShippingRecalc();
+
+  var shipping = estimateShipping(subtotal);
+
+  // синхронизируем товар "Delivery"
+  var dIdx = -1; for (var j=0;j<cart.length;j++){ if (cart[j].id==='delivery'){ dIdx=j; break; } }
+  if (shipping > 0){
+    var deliveryItem = { id:'delivery', name:'Delivery', variant:'GrabExpress (estimate)', price:shipping, qty:1, img:'images/delivery.png' };
+    if (dIdx>-1) cart[dIdx] = deliveryItem; else cart.push(deliveryItem);
+  } else if (dIdx>-1){ cart.splice(dIdx,1); }
+
+  // рендер строк корзины
+  var total = 0;
+  for (var k=0;k<cart.length;k++){
+    var item = cart[k]; total += item.price * item.qty;
+    var controls = (item.id==='delivery') ? '' :
+      '<button class="px-3 py-2 rounded border" data-act="dec" data-idx="'+k+'">−</button>'+
+      '<button class="px-3 py-2 rounded border" data-act="inc" data-idx="'+k+'">+</button>';
+    var preorderTag = item.preorder ? ' <span class="ml-1 text-xs text-purple-700 font-semibold">PREORDER</span>' : '';
+    var row = document.createElement('div');
+    row.className = 'py-3 flex items-center gap-3';
+    row.innerHTML =
+      '<img src="'+item.img+'" class="w-16 h-16 object-cover rounded-lg" onerror="this.src=\'https://placehold.co/200?text='+encodeURIComponent(item.name)+'\'"/>'+
+      '<div class="flex-1"><div class="font-medium">'+item.name+(item.variant?' — '+item.variant:'')+preorderTag+'</div>'+
+      '<div class="text-sm text-zinc-600">'+fmt(item.price)+' × '+item.qty+'</div></div>'+
+      '<div class="flex items-center gap-2">'+controls+
+      '<button class="px-3 py-2 rounded bg-zinc-100" data-act="del" data-idx="'+k+'">✕</button></div>';
+    cartItems.appendChild(row);
+  }
+
+  // бейджи/суммы
+  var itemsCount = 0; for (var z=0;z<cart.length;z++){ if (cart[z].id!=='delivery') itemsCount += cart[z].qty; }
+  cartCount.textContent = itemsCount;
+  fabCount.textContent = itemsCount;
+  cartSubtotal.textContent = fmt(subtotal);
+  mobileSubtotal.textContent = fmt(subtotal + shipping);
+  shippingCostEl.textContent = fmt(shipping);
+  cartTotal.textContent = fmt(total);
+  if (shippingRow) shippingRow.classList.toggle('hidden', shipping === 0);
+
+  // доступность Checkout
+  var name = document.getElementById('custName').value.trim();
+  var phone = document.getElementById('custPhone').value.trim();
+  var address = document.getElementById('address').value.trim();
+  var canCheckout = itemsCount>0 && name && phone && address;
+  checkoutBtn.disabled = !canCheckout;
+
+  // сообщение для LINE/Email
+  var lines = cart.map(function(i){
+    return '• '+i.name+(i.variant?' ('+i.variant+')':'')+(i.preorder?' [PREORDER]':'')+' x'+i.qty+' — '+CONFIG.currency+' '+i.price;
+  }).join('\n');
+
+  var distanceNote = (typeof state.distanceKm === 'number')
+    ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
+    : '';
+
+  var msg = "Order from 5 o'clock Tea\n" + lines +
+            '\n\nSubtotal: '+fmt(subtotal)+
+            (shipping>0?'\nDelivery: '+fmt(shipping):'')+
+            '\nTotal: '+fmt(total)+ distanceNote +
+            '\n\nName: '+name+
+            '\nPhone: '+phone+
+            '\nAddress: '+address;
+  checkoutBtn.setAttribute('data-msg', msg);
+
+  var mailBody = encodeURIComponent(msg);
+  emailBtn.href = "mailto:5OCLOCK@GMAIL.COM?subject=" + encodeURIComponent("Order — 5 o'clock Tea") + "&body=" + mailBody;
+}
+
+// qty/delete controls
+document.addEventListener('click', function(e){
+  var act = e.target.getAttribute('data-act');
+  if (!act) return;
+  var idx = parseInt(e.target.getAttribute('data-idx'),10);
+  if (isNaN(idx)) return;
+  if (act==='inc') cart[idx].qty += 1;
+  if (act==='dec') cart[idx].qty = Math.max(1, cart[idx].qty - 1);
+  if (act==='del'){ if (cart[idx].id==='delivery') return; cart.splice(idx,1); }
+  updateCart();
+});
+
+// add to cart (+ PREORDER)
+document.addEventListener('click', function(e){
+  if (!e.target.classList.contains('addBtn')) return;
+  var id = e.target.getAttribute('data-id');
+  var card = e.target.closest('article');
+  var sel = card.querySelector('.sizeSel');
+  var product = CONFIG.products.find(function(x){ return x.id===id; });
+  var opt = product.options[parseInt(sel.value,10)];
+  var existing = cart.find(function(i){ return i.id===id && i.variant===opt.label; });
+  if (existing) existing.qty += 1;
+  else cart.push({ id:id, name:product.name, variant:opt.label, price:opt.price, qty:1, img:product.img, preorder: !!product.outOfStock });
+  updateCart();
+  cartDrawer.classList.remove('hidden');
+});
+
+// inputs
+['custName','custPhone','address'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el){
+    el.addEventListener('input', updateCart);
+    if (id === 'address') el.addEventListener('input', scheduleShippingRecalc);
+  }
+});
+
+// open/close cart
+openCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
+closeCart.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
+closeCartBtn.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
+fabCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
+mobileCheckoutBtn.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
+
+// LINE checkout
+checkoutBtn.addEventListener('click', function(){
+  var message = checkoutBtn.getAttribute('data-msg') || '';
+  try { navigator.clipboard.writeText(message); } catch(e) {}
+  var url = 'https://line.me/R/ti/p/' + encodeURIComponent(CONFIG.lineId);
+  window.open(url, '_blank');
+});
+
+document.getElementById('year').textContent = new Date().getFullYear();
+updateCart();
+</script>
+
+<!-- Google Places (Autocomplete only) -->
+<script>
+function initMaps(){
+  try{
+    var addrEl = document.getElementById('address');
+    if (addrEl && addrEl.tagName === 'INPUT'){
+      var ac = new google.maps.places.Autocomplete(addrEl, { fields:['formatted_address','geometry'] });
+      ac.addListener('place_changed', function(){
+        var place = ac.getPlace();
+        if (place && place.formatted_address) { addrEl.value = place.formatted_address; }
+        updateCart();
+        if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+      });
+    }
+  }catch(e){ console.warn('Google Maps init failed', e); }
+}
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&libraries=places&callback=initMaps"></script>
+</body>
+</html>
