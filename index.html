@@ -260,10 +260,28 @@ function debounce(fn, ms) {
   };
 }
 
+ async function geocodeAddressIfNeeded(addressText) {
+  return new Promise((resolve) => {
+    if (!window.google || !google.maps) {
+      resolve(addressText);
+      return;
+    }
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: addressText }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        resolve(results[0].formatted_address);
+      } else {
+        resolve(addressText); // fallback — используем как есть
+      }
+    });
+  });
+}
+ 
 async function recalcShippingByDistance(subtotalTHB) {
   try {
     var addressEl = document.getElementById('address');
     var dst = (addressEl && addressEl.value ? addressEl.value : "").trim();
+    dst = await geocodeAddressIfNeeded(dst);
     if (!dst) { state.shippingTHB = null; state.distanceKm = null; return; }
     if (subtotalTHB >= CONFIG.freeShippingThreshold) {
       state.shippingTHB = 0; state.distanceKm = null; return;
@@ -451,7 +469,8 @@ function initMaps() {
     if (window.google && google.maps && google.maps.places) {
       const ac = new google.maps.places.Autocomplete(addrEl, {
         fields: ['formatted_address', 'geometry'],
-        componentRestrictions: { country: "th" } // 🇹🇭 ограничиваем Таиландом
+        componentRestrictions: { country: "th" },
+        types: ['geocode', 'establishment']
       });
 
       ac.addListener('place_changed', () => {
