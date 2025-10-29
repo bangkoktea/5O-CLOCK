@@ -441,19 +441,37 @@ updateCart();
 
 <!-- Google Places (Autocomplete only) -->
 <script>
-function initMaps(){
-  try{
-    var addrEl = document.getElementById('address');
-    if (addrEl && addrEl.tagName === 'INPUT'){
-      var ac = new google.maps.places.Autocomplete(addrEl, { fields:['formatted_address','geometry'] });
-      ac.addListener('place_changed', function(){
-        var place = ac.getPlace();
-        if (place && place.formatted_address) { addrEl.value = place.formatted_address; }
+function initMaps() {
+  const addrEl = document.getElementById('address');
+  if (!addrEl) return;
+
+  let tries = 0;
+  const tryInit = () => {
+    tries++;
+    if (window.google && google.maps && google.maps.places) {
+      const ac = new google.maps.places.Autocomplete(addrEl, {
+        fields: ['formatted_address', 'geometry'],
+        componentRestrictions: { country: "th" } // 🇹🇭 ограничиваем Таиландом
+      });
+
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        if (place && place.formatted_address) {
+          addrEl.value = place.formatted_address;
+        }
         updateCart();
         if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
       });
+
+      console.log('✅ Google Maps initialized (Thailand restriction)');
+    } else if (tries < 20) {
+      setTimeout(tryInit, 250);
+    } else {
+      console.warn('⚠️ Google Maps failed to load');
     }
-  }catch(e){ console.warn('Google Maps init failed', e); }
+  };
+
+  tryInit();
 }
 </script>
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&libraries=places&callback=initMaps"></script>
