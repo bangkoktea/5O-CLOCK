@@ -523,42 +523,94 @@ checkoutBtn.addEventListener('click', function(){
 document.getElementById('year').textContent = new Date().getFullYear();
 updateCart();
 
-// ================== USE MY LOCATION (with REST fallback) ==================
-document.getElementById('useLocationBtn')?.addEventListener('click', async () => {
-  if (!navigator.geolocation) { alert("Geolocation is not supported on this device."); return; }
+// ================== USE MY LOCATION (stable) ==================
+(function(){
   const btn = document.getElementById('useLocationBtn');
-  btn.textContent = 'Locating...'; btn.disabled = true;
+  if (!btn) return;
 
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
+  // Берём лучший фикс за небольшой промежуток времени
+  function getBestPosition(timeoutMs = 12000){
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        return reject(new Error('Geolocation unsupported'));
+      }
+      let best = null;
+      let watchId = null;
+      const timer = setTimeout(() => {
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        best ? resolve(best) : reject(new Error('No position fix'));
+      }, timeoutMs);
 
-    const fill = (addr) => {
-      document.getElementById('address').value = addr || '';
-      updateCart(); if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
-      btn.textContent = '📍 Use my location'; btn.disabled = false;
-    };
+      watchId = navigator.geolocation.watchPosition(
+        pos => {
+          const acc = pos.coords.accuracy || 999999;
+          // Берём позицию с минимальной погрешностью
+          if (!best || acc < best.coords.accuracy) best = pos;
+          // Если точность уже приличная — завершаем раньше
+          if (acc < 30) {
+            clearTimeout(timer);
+            navigator.geolocation.clearWatch(watchId);
+            resolve(best);
+          }
+        },
+        err => {
+          clearTimeout(timer);
+          if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+          reject(err);
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: timeoutMs }
+      );
+    });
+  }
 
-    try {
+  async function reverseGeocode(lat, lng, lang = 'th'){
+    return new Promise((resolve) => {
       const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: { lat, lng } }, async (results, status) => {
-        if (status === 'OK' && results[0]) {
-          fill(results[0].formatted_address);
-        } else {
-          try {
-            const resp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&language=th&region=TH`);
-            const data = await resp.json();
-            if (data.status === 'OK' && data.results[0]) fill(data.results[0].formatted_address);
-            else { alert("Could not find address. Please enter manually."); fill(''); }
-          } catch (e) { console.error(e); alert("Reverse geocoding failed. Please enter manually."); fill(''); }
-        }
+      geocoder.geocode({ location: { lat, lng }, language: lang }, (r, s) => {
+        if (s === 'OK' && r && r[0]) resolve(r[0].formatted_address);
+        else resolve(null);
       });
-    } catch (err) { console.error(err); alert("Reverse geocoding failed."); fill(''); }
-  }, (err) => {
-    console.error(err); alert("Unable to get location. Please allow access or enter manually.");
-    const btn = document.getElementById('useLocationBtn'); btn.textContent='📍 Use my location'; btn.disabled=false;
-  }, { enableHighAccuracy: true, timeout: 10000 });
-});
+    });
+  }
+
+  btn.addEventListener('click', async () => {
+    btn.textContent = 'Locating...';
+    btn.disabled = true;
+    try {
+      // Permissions API: если запрет — подсказываем открыть настройки
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const st = await navigator.permissions.query({ name: 'geolocation' });
+          if (st.state === 'denied') {
+            alert('Location access is blocked. Please allow location for this site in your browser settings.');
+          }
+        } catch(_) {}
+      }
+
+      const pos = await getBestPosition(15000);
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      // Покажем пользователю приблизительный адрес (тайский), если нет — английский
+      let addr = await reverseGeocode(lat, lng, 'th');
+      if (!addr) addr = await reverseGeocode(lat, lng, 'en');
+
+      if (addr) {
+        document.getElementById('address').value = addr;
+        updateCart();
+        if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+      } else {
+        alert('Could not resolve your location to an address. Please pick on map.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Unable to get your precise location. You can select it on the map.');
+    } finally {
+      btn.textContent = '📍 Use my current location';
+      btn.disabled = false;
+    }
+  });
+})();
 
 // ================== MAP PICKER ==================
 let mapPicker = { map:null, marker:null, inited:false };
