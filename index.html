@@ -518,88 +518,84 @@ document.addEventListener('click', function(e){
 })();
 
 
-// open/close cart
+// === open / close cart ===
 openCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
 closeCart.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
 closeCartBtn.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
 fabCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
-mobileCheckoutBtn.addEventListener('click', openLineWithMessage); });
+// ⚠️ Не навешиваем обработчик на mobileCheckoutBtn здесь — он ниже, чтобы сразу открывать LINE
 
-// === ORDER MESSAGE BUILDER (единообразно для LINE/Email/Checkout) ===
+// === ORDER MESSAGE BUILDER (универсально для LINE и Email) ===
 function buildOrderMessage(){
-  var subtotal = 0;
-  var lines = cart.map(function(i){
-    if (i.id !== 'delivery') subtotal += i.price * i.qty;
-    return '• ' + i.name + (i.variant ? ' ('+i.variant+')' : '') +
-           (i.preorder ? ' [PREORDER]' : '') +
-           ' x' + i.qty + ' — ' + CONFIG.currency + ' ' + i.price;
+  let subtotal = 0;
+  const lines = cart.map(i=>{
+    if (i.id!=='delivery') subtotal += i.price * i.qty;
+    return `• ${i.name}${i.variant?' ('+i.variant+')':''}${i.preorder?' [PREORDER]':''} x${i.qty} — ${CONFIG.currency} ${i.price}`;
   }).join('\n');
 
-  var shipping = (typeof state.shippingTHB === 'number')
+  const shipping = (typeof state.shippingTHB==='number')
     ? state.shippingTHB
-    : ((subtotal >= CONFIG.freeShippingThreshold) ? 0 : 70);
+    : ((subtotal>=CONFIG.freeShippingThreshold)?0:70);
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
 
-  var total = cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
+  const name = (document.getElementById('custName').value||'').trim();
+  const phone = (document.getElementById('custPhone').value||'').trim();
+  const address = (document.getElementById('address').value||'').trim();
 
-  var name = (document.getElementById('custName').value || '').trim();
-  var phone = (document.getElementById('custPhone').value || '').trim();
-  var address = (document.getElementById('address').value || '').trim();
-
-  var distanceNote = (typeof state.distanceKm === 'number')
-    ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
+  const distanceNote = (typeof state.distanceKm==='number')
+    ? `\nDistance (approx): ${state.distanceKm.toFixed(1)} km`
     : '';
 
-  var text =
-    "Order from 5 o'clock Tea\n" +
-    lines +
-    '\n\nSubtotal: ' + fmt(subtotal) +
-    (shipping>0 ? '\nDelivery: ' + fmt(shipping) : '') +
-    '\nTotal: ' + fmt(total) + distanceNote +
-    '\n\nName: ' + name +
-    '\nPhone: ' + phone +
-    '\nAddress: ' + address;
+  const text =
+`🫖 Order from 5 o’clock Tea
+${lines}
 
-  return {
-    text: text,
-    subject: "Order — 5 o'clock Tea (" + fmt(total) + ")"
-  };
+Subtotal: ${fmt(subtotal)}${shipping>0?`\nDelivery: ${fmt(shipping)}`:''}
+Total: ${fmt(total)}${distanceNote}
+
+Name: ${name}
+Phone: ${phone}
+Address: ${address}`;
+
+  return { text, subject: `Order — 5 o’clock Tea (${fmt(total)})` };
 }
 
-// === Email: формируем перед переходом ===
+// === EMAIL: открытие письма с готовым текстом ===
 emailBtn.addEventListener('click', function(e){
-  var m = buildOrderMessage();
-  this.href = "mailto:5OCLOCK@GMAIL.COM?subject=" +
-              encodeURIComponent(m.subject) +
-              "&body=" + encodeURIComponent(m.text);
+  e.preventDefault();
+  const m = buildOrderMessage();
+  const mailto = `mailto:5OCLOCK@GMAIL.COM?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text)}`;
+  window.location.href = mailto;
 });
 
-// === LINE / Checkout (с шарингом и fallback) ===
+// === LINE / CHECKOUT: шаринг или web-ссылка LINE ===
 async function openLineWithMessage(){
-  var m = buildOrderMessage();
+  const m = buildOrderMessage();
 
+  // Web Share API (iOS/Android)
   if (navigator.share){
-    try{
-      await navigator.share({ title: "5 o'clock Tea", text: m.text });
+    try {
+      await navigator.share({ title: "5 o’clock Tea", text: m.text });
       return;
-    }catch(e){}
+    } catch(e){}
   }
 
-  var shareUrl = 'https://line.me/R/share?text=' + encodeURIComponent(m.text);
-  var opened = window.open(shareUrl, '_blank');
+  // Открываем LINE share URL
+  const shareUrl = `https://line.me/R/share?text=${encodeURIComponent(m.text)}`;
+  const opened = window.open(shareUrl, '_blank');
   if (opened) return;
 
+  // Фолбэк: копируем текст и открываем чат-линк
   try { await navigator.clipboard.writeText(m.text); } catch(_){}
   alert('Order text copied. Paste it into LINE chat.');
-  var chatUrl = 'https://line.me/R/ti/p/' + encodeURIComponent(CONFIG.lineId);
+  const chatUrl = `https://line.me/R/ti/p/${encodeURIComponent(CONFIG.lineId)}`;
   window.open(chatUrl, '_blank');
 }
 
-// кнопки
+// === Кнопки checkout ===
 checkoutBtn.addEventListener('click', openLineWithMessage);
 mobileCheckoutBtn.addEventListener('click', openLineWithMessage);
 
-document.getElementById('year').textContent = new Date().getFullYear();
-updateCart();
 
 // ================== USE MY LOCATION (stable) ==================
 (function(){
