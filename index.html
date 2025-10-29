@@ -523,7 +523,7 @@ openCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidd
 closeCart.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
 closeCartBtn.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
 fabCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
-mobileCheckoutBtn.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
+mobileCheckoutBtn.addEventListener('click', openLineWithMessage); });
 
 // === ORDER MESSAGE BUILDER (единообразно для LINE/Email/Checkout) ===
 function buildOrderMessage(){
