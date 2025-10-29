@@ -564,7 +564,8 @@ emailBtn.addEventListener('click', function(){
 // === LINE: открыть чат @924uwcib и подставить текст ===
 async function openLineWithMessage(){
   var m = buildOrderMessage();
-  var encoded = encodeURIComponent(m.text);
+  var text = m.text.replace(/\n/g, '%0A'); // <-- важно: замена переносов строк
+  var encoded = encodeURIComponent(m.text).replace(/%0A/g, '%0A');
 
   // 1) Deep link в официальное окно аккаунта с текстом (моб. приложение LINE)
   var deep1 = 'line://oaMessage/' + encodeURIComponent(CONFIG.lineId) + '/?' + encoded;
