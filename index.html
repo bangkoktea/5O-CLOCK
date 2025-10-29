@@ -474,34 +474,45 @@ document.getElementById('useLocationBtn')?.addEventListener('click', async () =>
   navigator.geolocation.getCurrentPosition(async (pos) => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
+    console.log('📍 Coordinates:', lat, lng);
 
-    try {
-      // обратное геокодирование
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-        if (status === 'OK' && results[0]) {
-          const addr = results[0].formatted_address;
-          document.getElementById('address').value = addr;
-          updateCart();
-          if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
-        } else {
-          alert("Could not find address. Please enter manually.");
+    const geocoder = new google.maps.Geocoder();
+
+    geocoder.geocode({ location: { lat, lng } }, async (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const addr = results[0].formatted_address;
+        document.getElementById('address').value = addr;
+        updateCart();
+        if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+      } else {
+        console.warn('Geocoder failed:', status);
+        // fallback через REST API (работает даже если JS-клиент не дал ответа)
+        try {
+          const resp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&language=th&region=TH`);
+          const data = await resp.json();
+          if (data.status === 'OK' && data.results[0]) {
+            const addr = data.results[0].formatted_address;
+            document.getElementById('address').value = addr;
+            updateCart();
+            if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+          } else {
+            alert("Could not find address. Please enter manually.");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Reverse geocoding failed. Please enter manually.");
         }
-        btn.textContent = '📍 Use my current location';
-        btn.disabled = false;
-      });
-    } catch (err) {
-      console.error(err);
-      alert("Location lookup failed.");
+      }
       btn.textContent = '📍 Use my current location';
       btn.disabled = false;
-    }
+    });
   }, (err) => {
+    console.error(err);
     alert("Unable to get location. Please allow access or enter manually.");
     btn.textContent = '📍 Use my current location';
     btn.disabled = false;
   }, { enableHighAccuracy: true, timeout: 10000 });
-});  
+}); 
 </script>
 
 <!-- Google Places (Autocomplete only) -->
