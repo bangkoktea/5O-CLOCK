@@ -190,12 +190,10 @@ const CONFIG = {
       desc: 'Black tea with apples, chokeberry, strawberry & rose petals.' },
     { id: 'rose-hibiscus', name: 'Rose Hibiscus Fruit Tea', img: 'images/rose-hibiscus.jpg',
       options: [ { label: '50 g', price: 195 } ],
-      desc: 'Hibiscus, rose petals & berries for a ruby-red infusion.',
-      outOfStock: true },
+      desc: 'Hibiscus, rose petals & berries for a ruby-red infusion.', outOfStock: true },
     { id: 'citrus-orange', name: 'Citrus Orange Fruit Tea', img: 'images/citrus-orange.jpg',
       options: [ { label: '50 g', price: 195 } ],
-      desc: 'Sun-dried oranges, apples & hibiscus for a refreshing citrus aroma.',
-      outOfStock: true },
+      desc: 'Sun-dried oranges, apples & hibiscus for a refreshing citrus aroma.', outOfStock: true },
     { id: 'strawberries-cream', name: 'Strawberries & Cream', img: 'images/strawberries-cream.jpg',
       options: [ { label: '50 g', price: 195 } ],
       desc: 'Black tea with strawberry pieces, goji berries & candied pineapple.' }
@@ -323,7 +321,7 @@ async function recalcShippingByDistance(subtotalTHB) {
 
     if (!dstLL || !state.pickupLL) { state.shippingTHB = null; return; }
 
-    // Расстояние по прямой (меньше «рандома», чем у маршрутов)
+    // Расстояние по прямой
     const km = google.maps.geometry.spherical.computeDistanceBetween(
       new google.maps.LatLng(state.pickupLL.lat, state.pickupLL.lng),
       new google.maps.LatLng(dstLL.lat, dstLL.lng)
@@ -471,7 +469,8 @@ document.addEventListener('click', function(e){
     if (id === 'address') el.addEventListener('input', scheduleShippingRecalc);
   }
 });
-  // ==== TH phone autoprefix (+66) & normalization ====
+
+// ==== TH phone autoprefix (+66) & normalization ====
 (function(){
   const el = document.getElementById('custPhone');
   if (!el) return;
@@ -479,21 +478,11 @@ document.addEventListener('click', function(e){
   function normalizeTH(v){
     if (!v) return '';
     let s = v.replace(/\s+/g,'');
-    if (s.startsWith('00')) s = '+' + s.slice(2);      // 00… -> +…
-    if (s.startsWith('+66')) {
-      s = '+66 ' + s.slice(3).replace(/^0+/, '');
-      return s;
-    }
-    if (s.startsWith('66')) {
-      s = '+66 ' + s.slice(2).replace(/^0+/, '');
-      return s;
-    }
-    if (s.startsWith('0')) {                            // 0XXXXXXXXX -> +66 XXXXXXXX
-      s = '+66 ' + s.slice(1);
-      return s;
-    }
-    return s.replace(/^\+66$/, '+66 ')
-            .replace(/^\+66(?=\d)/, '+66 ');
+    if (s.startsWith('00')) s = '+' + s.slice(2);
+    if (s.startsWith('+66')) { s = '+66 ' + s.slice(3).replace(/^0+/, ''); return s; }
+    if (s.startsWith('66'))  { s = '+66 ' + s.slice(2).replace(/^0+/, ''); return s; }
+    if (s.startsWith('0'))   { s = '+66 ' + s.slice(1); return s; }
+    return s.replace(/^\+66$/, '+66 ').replace(/^\+66(?=\d)/, '+66 ');
   }
 
   el.addEventListener('focus', () => {
@@ -517,85 +506,100 @@ document.addEventListener('click', function(e){
   el.addEventListener('blur', () => { el.value = normalizeTH(el.value).trim(); });
 })();
 
-
-// === open / close cart ===
+// open/close cart
 openCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
 closeCart.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
 closeCartBtn.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
 fabCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
-// ⚠️ Не навешиваем обработчик на mobileCheckoutBtn здесь — он ниже, чтобы сразу открывать LINE
+mobileCheckoutBtn.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
 
-// === ORDER MESSAGE BUILDER (универсально для LINE и Email) ===
+// === ORDER MESSAGE BUILDER (единый для LINE/Email/Checkout) ===
 function buildOrderMessage(){
-  let subtotal = 0;
-  const lines = cart.map(i=>{
-    if (i.id!=='delivery') subtotal += i.price * i.qty;
-    return `• ${i.name}${i.variant?' ('+i.variant+')':''}${i.preorder?' [PREORDER]':''} x${i.qty} — ${CONFIG.currency} ${i.price}`;
+  var subtotal = 0;
+  var lines = cart.map(function(i){
+    if (i.id !== 'delivery') subtotal += i.price * i.qty;
+    return '• ' + i.name + (i.variant ? ' ('+i.variant+')' : '') +
+           (i.preorder ? ' [PREORDER]' : '') +
+           ' x' + i.qty + ' — ' + CONFIG.currency + ' ' + i.price;
   }).join('\n');
 
-  const shipping = (typeof state.shippingTHB==='number')
+  var shipping = (typeof state.shippingTHB === 'number')
     ? state.shippingTHB
-    : ((subtotal>=CONFIG.freeShippingThreshold)?0:70);
-  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    : ((subtotal >= CONFIG.freeShippingThreshold) ? 0 : 70);
 
-  const name = (document.getElementById('custName').value||'').trim();
-  const phone = (document.getElementById('custPhone').value||'').trim();
-  const address = (document.getElementById('address').value||'').trim();
+  var total = cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
 
-  const distanceNote = (typeof state.distanceKm==='number')
-    ? `\nDistance (approx): ${state.distanceKm.toFixed(1)} km`
+  var name = (document.getElementById('custName').value || '').trim();
+  var phone = (document.getElementById('custPhone').value || '').trim();
+  var address = (document.getElementById('address').value || '').trim();
+
+  var distanceNote = (typeof state.distanceKm === 'number')
+    ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
     : '';
 
-  const text =
-`🫖 Order from 5 o’clock Tea
-${lines}
+  var text =
+    "Order from 5 o'clock Tea\n" +
+    lines +
+    '\n\nSubtotal: ' + fmt(subtotal) +
+    (shipping>0 ? '\nDelivery: ' + fmt(shipping) : '') +
+    '\nTotal: ' + fmt(total) + distanceNote +
+    '\n\nName: ' + name +
+    '\nPhone: ' + phone +
+    '\nAddress: ' + address;
 
-Subtotal: ${fmt(subtotal)}${shipping>0?`\nDelivery: ${fmt(shipping)}`:''}
-Total: ${fmt(total)}${distanceNote}
-
-Name: ${name}
-Phone: ${phone}
-Address: ${address}`;
-
-  return { text, subject: `Order — 5 o’clock Tea (${fmt(total)})` };
+  return {
+    text: text,
+    subject: "Order — 5 o'clock Tea (" + fmt(total) + ")"
+  };
 }
 
-// === EMAIL: открытие письма с готовым текстом ===
-emailBtn.addEventListener('click', function(e){
-  e.preventDefault();
-  const m = buildOrderMessage();
-  const mailto = `mailto:5OCLOCK@GMAIL.COM?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.text)}`;
-  window.location.href = mailto;
+// === Email: формируем href перед переходом ===
+emailBtn.addEventListener('click', function(){
+  var m = buildOrderMessage();
+  this.href = "mailto:5OCLOCK@GMAIL.COM?subject=" +
+              encodeURIComponent(m.subject) +
+              "&body=" + encodeURIComponent(m.text);
 });
 
-// === LINE / CHECKOUT: шаринг или web-ссылка LINE ===
+// === LINE: открыть чат @924uwcib и подставить текст ===
 async function openLineWithMessage(){
-  const m = buildOrderMessage();
+  var m = buildOrderMessage();
+  var encoded = encodeURIComponent(m.text);
 
-  // Web Share API (iOS/Android)
-  if (navigator.share){
-    try {
-      await navigator.share({ title: "5 o’clock Tea", text: m.text });
-      return;
-    } catch(e){}
-  }
+  // 1) Deep link в официальное окно аккаунта с текстом (моб. приложение LINE)
+  var deep1 = 'line://oaMessage/' + encodeURIComponent(CONFIG.lineId) + '/?' + encoded;
+  // 2) Веб-fallback к тому же действию
+  var deep2 = 'https://line.me/R/oaMessage/' + encodeURIComponent(CONFIG.lineId) + '/?' + encoded;
 
-  // Открываем LINE share URL
-  const shareUrl = `https://line.me/R/share?text=${encodeURIComponent(m.text)}`;
-  const opened = window.open(shareUrl, '_blank');
+  // Попробуем deep-link
+  let opened = false;
+  try { opened = !!window.open(deep1, '_blank'); } catch(_) {}
   if (opened) return;
 
-  // Фолбэк: копируем текст и открываем чат-линк
+  try { opened = !!window.open(deep2, '_blank'); } catch(_) {}
+  if (opened) return;
+
+  // 3) Если не получилось — общий share
+  if (navigator.share){
+    try{
+      await navigator.share({ title: "5 o'clock Tea", text: m.text });
+      return;
+    }catch(_){}
+  }
+
+  // 4) Финальный fallback: копируем текст и открываем чат аккаунта
   try { await navigator.clipboard.writeText(m.text); } catch(_){}
-  alert('Order text copied. Paste it into LINE chat.');
-  const chatUrl = `https://line.me/R/ti/p/${encodeURIComponent(CONFIG.lineId)}`;
+  alert('Order text copied. Paste it into the LINE chat.');
+  var chatUrl = 'https://line.me/R/ti/p/' + encodeURIComponent(CONFIG.lineId);
   window.open(chatUrl, '_blank');
 }
 
-// === Кнопки checkout ===
+// кнопки «Send order via LINE»
 checkoutBtn.addEventListener('click', openLineWithMessage);
 mobileCheckoutBtn.addEventListener('click', openLineWithMessage);
 
+document.getElementById('year').textContent = new Date().getFullYear();
+updateCart();
 
 // ================== USE MY LOCATION (stable) ==================
 (function(){
@@ -754,7 +758,7 @@ function initMaps() {
         componentRestrictions: { country: "th" },
         bounds: bangkokBounds,
         strictBounds: false,
-        types: ['address']   // адреса (лучше тянет дома/кв.)
+        types: ['address']
       });
       ac.addListener('place_changed', () => {
         const place = ac.getPlace();
