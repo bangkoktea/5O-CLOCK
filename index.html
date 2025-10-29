@@ -128,6 +128,11 @@
         <div><label for="custPhone" class="text-sm font-medium">Phone number</label><input id="custPhone" type="tel" inputmode="tel" autocomplete="tel" class="w-full border rounded-lg p-3 text-[15px]" placeholder="+66 ..."></div>
         <div><label for="address" class="text-sm font-medium">Delivery address</label><input id="address" type="text" autocomplete="street-address" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Street, district, Bangkok, ZIP" /><p id="bkkNote" class="text-xs text-amber-700 mt-1 hidden">Delivery in Bangkok only / จัดส่งเฉพาะในกรุงเทพฯ</p></div>
       </div>
+      <button type="button" id="useLocationBtn"
+        class="mt-2 w-full rounded-full bg-zinc-100 text-sm py-2 hover:bg-zinc-200">
+        📍 Use my current location
+      </button>
+
       <div class="flex items-center justify-between text-lg"><span>Total</span><strong id="cartTotal">THB 0</strong></div>
       <button id="checkoutBtn" class="btn block w-full px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Send order via LINE</button>
       <a id="emailBtn" href="mailto:5OCLOCK@GMAIL.COM" class="btn block w-full px-5 py-3 rounded-full bg-black text-white text-sm font-semibold text-center">Or send by Email</a>
@@ -455,6 +460,48 @@ checkoutBtn.addEventListener('click', function(){
 
 document.getElementById('year').textContent = new Date().getFullYear();
 updateCart();
+// ================== USE MY LOCATION ==================
+document.getElementById('useLocationBtn')?.addEventListener('click', async () => {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported on this device.");
+    return;
+  }
+
+  const btn = document.getElementById('useLocationBtn');
+  btn.textContent = 'Locating...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    try {
+      // обратное геокодирование
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          const addr = results[0].formatted_address;
+          document.getElementById('address').value = addr;
+          updateCart();
+          if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+        } else {
+          alert("Could not find address. Please enter manually.");
+        }
+        btn.textContent = '📍 Use my current location';
+        btn.disabled = false;
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Location lookup failed.");
+      btn.textContent = '📍 Use my current location';
+      btn.disabled = false;
+    }
+  }, (err) => {
+    alert("Unable to get location. Please allow access or enter manually.");
+    btn.textContent = '📍 Use my current location';
+    btn.disabled = false;
+  }, { enableHighAccuracy: true, timeout: 10000 });
+});  
 </script>
 
 <!-- Google Places (Autocomplete only) -->
