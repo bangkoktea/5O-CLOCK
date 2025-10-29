@@ -1,113 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>5 o’clock — Tea</title>
-  <style>
-    body{font-family:Inter,Arial;background:#0E0D12;color:#e5e7eb;margin:0}
-    .container{max-width:900px;margin:auto;padding:20px}
-    .brand{font-family:"Playfair Display",serif;font-size:1.5rem;margin-bottom:10px}
-    .btn{background:#A01226;color:#fff;border:none;border-radius:8px;padding:10px 16px;cursor:pointer;margin-top:8px}
-    .card{background:#16151c;padding:16px;margin-bottom:12px;border-radius:12px}
-    .input{width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid #333;background:#121019;color:#fff}
-    a{color:#e5e7eb;text-decoration:none} a:hover{text-decoration:underline}
-    header{background:#0b0b0b;border-bottom:1px solid #222;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
-    .links a{margin-left:10px;padding:6px 10px;border-radius:8px;background:#1c1b22}
-    .links a.red{background:#A01226}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5 o’clock — Morning tea, crafted with love.</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F3EE; --card:#FFFFFF; --text:#1f2937; --muted:#6b7280; --border:#e9e5df;
+    --accent:#0b0b0b; --brand:#A01226; --pill:#111; --pillText:#fff; --primary:#0b0b0b; --pre:#7C3AED;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+  a{color:var(--text);text-decoration:none}
+  header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--border)}
+  .wrap{max-width:1100px;margin:0 auto;padding:14px 16px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{font-family:"Playfair Display",serif;font-size:18px}
+  nav a{margin:0 10px;color:#555}
+  .cart-pill{background:var(--pill);color:var(--pillText);padding:8px 12px;border-radius:999px;font-weight:600}
+  .hero{max-width:1100px;margin:22px auto 8px;padding:20px}
+  .hero-inner{background:linear-gradient(90deg,#fff 0%,#fff 65%,#FFF6E5 100%);border:1px solid var(--border);border-radius:14px;padding:22px 22px}
+  .hero h1{font-family:"Playfair Display",serif;font-weight:700;margin:0 0 6px;font-size:34px;line-height:1.1}
+  .hero p{margin:0 0 12px;color:#555}
+  .btn{display:inline-flex;align-items:center;gap:.5rem;border:1px solid #111;background:#111;color:#fff;padding:10px 14px;border-radius:999px;cursor:pointer}
+  .btn.secondary{background:#fff;color:#111}
+  .container{max-width:1100px;margin:0 auto;padding:10px 16px 60px}
+  .h2{font-family:"Playfair Display",serif;font-size:22px;margin:18px 0 12px}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  @media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 2px 0 #eae6df;padding:0;display:flex;flex-direction:column;overflow:hidden}
+  .ph{height:190px;display:flex;align-items:center;justify-content:center;color:#b7b7b7;background:#f2f2f2;border-bottom:1px solid var(--border);font-weight:600}
+  .img{width:100%;height:190px;object-fit:cover;border-bottom:1px solid var(--border)}
+  .body{padding:14px}
+  .title{font-weight:700;margin:0 0 6px}
+  .muted{color:#6b7280;font-size:14px}
+  .rowx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+  select{appearance:none;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+  .price{font-weight:700;margin-top:6px}
+  .pill{display:inline-block;padding:10px;border-radius:999px;font-weight:600;text-align:center;border:1px solid #111;background:#111;color:#fff}
+  .pill.pre{background:var(--pre);border-color:var(--pre)}
+  .section{margin-top:6px}
+  .card-plain{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px}
+  footer{border-top:1px solid var(--border);padding:14px 16px;color:#6b7280}
+  .hidden{display:none}
+</style>
 </head>
 <body>
 
+<!-- Header -->
 <header>
-  <div class="brand">5 o’clock</div>
-  <div class="links">
-    <a href="https://www.instagram.com/bangkok_tea_leaf" target="_blank">Instagram</a>
-    <a href="mailto:5oclock@gmail.com">Email</a>
-    <a href="https://line.me/R/ti/p/@924uwcib" target="_blank" class="red">Order via LINE</a>
+  <div class="wrap">
+    <div class="row">
+      <div class="brand">5 o’clock</div>
+      <nav>
+        <a href="#shop">Shop</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a id="cart-pill" class="cart-pill" href="#cart">Cart · <span id="cart-count">0</span></a>
+    </div>
   </div>
 </header>
 
-<div class="container">
-  <h2>Small-batch flavored loose-leaf tea</h2>
-  <p>Pickup Ramkhamhaeng 2, Indy 38/71 • Delivery via Grab/Kerry</p>
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Morning tea, crafted with love.</h1>
+    <p>Small-batch blends made in Thailand. Order fast via LINE or Email.</p>
+    <div class="row" style="gap:10px">
+      <a class="btn" href="#shop">Browse teas</a>
+      <a class="btn secondary" href="#contact" style="border-color:#d6d3ce">Contact</a>
+    </div>
+  </div>
+</section>
 
-  <h3>Shop teas</h3>
-
-  <div class="card">
-    <b>Wild Cherry — 50 g</b><br>
-    Black tea with cherry pieces • 3–6 min • 95°C<br>
-    <b>195 THB</b><br>
-    <button class="btn" onclick="addToCart('Wild Cherry 50g',195)">Add to cart</button>
+<!-- Shop -->
+<div class="container" id="shop">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <div class="h2">Shop teas</div>
+    <div class="muted">All prices in THB</div>
   </div>
 
-  <div class="card">
-    <b>Taiga Blend — 75 g</b><br>
-    Black tea, blackberries, lingonberry leaves, currant<br>
-    <b>275 THB</b><br>
-    <button class="btn" onclick="addToCart('Taiga Blend 75g',275)">Add to cart</button>
-  </div>
+  <div class="grid">
 
-  <h3>Your Cart</h3>
-  <div id="cart" class="card">No items yet</div>
+    <!-- Wild Cherry -->
+    <div class="card" data-sku="WILD-50">
+      <img class="img" src="assets/wild_cherry.jpg"
+           onerror="this.remove();const ph=this.parentNode.insertBefore(document.createElement('div'),this);ph.className='ph';ph.innerText='Wild Cherry'">
+      <div class="body">
+        <div class="title">Wild Cherry</div>
+        <div class="muted">Black tea with cherry notes — bright and aromatic.</div>
+        <div class="section">
+          <label class="muted">Size</label><br>
+          <select data-price>
+            <option value="195">50 g — THB 195</option>
+            <option value="275">75 g — THB 275</option>
+          </select>
+        </div>
+        <div class="rowx">
+          <button class="pill" data-add>Add to cart</button>
+        </div>
+      </div>
+    </div>
 
-  <h3>Checkout</h3>
-  <div class="card">
-    <label>Name</label>
-    <input id="name" class="input" type="text" placeholder="Your name">
-    <label>Phone</label>
-    <input id="phone" class="input" type="tel" placeholder="(+66)">
-    <label>Delivery address</label>
-    <textarea id="address" class="input" rows="3" placeholder="Street, condo, etc"></textarea>
-    <button class="btn" onclick="checkout()">Checkout via LINE</button>
-    <button class="btn" style="background:#333" onclick="clearCart()">Clear cart</button>
-    <div id="msg" style="color:#aaa;margin-top:8px"></div>
-  </div>
+    <!-- Taiga Blend -->
+    <div class="card" data-sku="TAIGA-50">
+      <img class="img" src="assets/taiga_blend.jpg"
+           onerror="this.remove();const ph=this.parentNode.insertBefore(document.createElement('div'),this);ph.className='ph';ph.innerText='Taiga Blend'">
+      <div class="body">
+        <div class="title">Taiga Blend</div>
+        <div class="muted">Black tea, berries & forest vibes. Cozy and bold.</div>
+        <div class="section">
+          <label class="muted">Size</label><br>
+          <select data-price>
+            <option value="195">50 g — THB 195</option>
+            <option value="275">75 g — THB 275</option>
+          </select>
+        </div>
+        <div class="rowx">
+          <button class="pill" data-add>Add to cart</button>
+        </div>
+      </div>
+    </div>
 
-  <h3>Delivery Estimator</h3>
-  <div class="card">
-    <label>Distance (km from Ramkhamhaeng 2, Indy 38/71):</label>
-    <input id="km" type="number" class="input" placeholder="e.g. 8">
-    <button class="btn" onclick="estimate()">Estimate</button>
-    <div id="ship-out" style="margin-top:8px;color:#aaa"></div>
-  </div>
+    <!-- Rose Strawberry Fruit Tea (preorder example) -->
+    <div class="card" data-sku="ROSE-STRAW-50">
+      <div class="ph">Rose Strawberry Fruit Tea</div>
+      <div class="body">
+        <div class="title">Rose Strawberry Fruit Tea</div>
+        <div class="muted">Black tea with apples, chokeberry, strawberry & rose petals.</div>
+        <div class="muted" style="margin-top:6px">Preorder only</div>
+        <div class="section">
+          <label class="muted">Size</label><br>
+          <select data-price>
+            <option value="195">50 g — THB 195</option>
+            <option value="275">75 g — THB 275</option>
+          </select>
+        </div>
+        <div class="rowx">
+          <button class="pill pre" data-pre>Preorder</button>
+        </div>
+      </div>
+    </div>
 
-  <footer style="margin-top:30px;color:#777">
-    Pickup point: Ramkhamhaeng 2, Indy 38/71 • Bangkok • Mon–Sat 10:00–19:00<br>
-    © 5 o’clock — small batches of flavored loose-leaf tea
-  </footer>
-</div>
+    <!-- Rose Hibiscus Fruit Tea (preorder) -->
+    <div class="card" data-sku="ROSE-HIB-50">
+      <div class="ph">Rose Hibiscus Fruit Tea</div>
+      <div class="body">
+        <div class="title">Rose Hibiscus Fruit Tea</div>
+        <div class="muted">Hibiscus, rose petals & berries for a ruby-red infusion.</div>
+        <div class="muted" style="margin-top:6px">Preorder only</div>
+        <div class="section">
+          <label class="muted">Size</label><br>
+          <select data-price>
+            <option value="195">50 g — THB 195</option>
+            <option value="275">75 g — THB 275</option>
+          </select>
+        </div>
+        <div class="rowx">
+          <button class="pill pre" data-pre>Preorder</button>
+        </div>
+      </div>
+    </div>
 
-<script>
-let cart = [];
-function renderCart(){
-  const box=document.getElementById('cart');
-  if(cart.length===0){box.textContent='No items yet';return;}
-  box.innerHTML = cart.map(i=>`${i.name} — ${i.qty} × ${i.price} THB`).join('<br>');
-}
-function addToCart(name,price){
-  const item=cart.find(i=>i.name===name);
-  if(item)item.qty++;else cart.push({name,price,qty:1});
-  renderCart();
-}
-function clearCart(){cart=[];renderCart();}
-function checkout(){
-  if(cart.length===0)return alert('Cart empty');
-  const name=document.getElementById('name').value.trim();
-  const phone=document.getElementById('phone').value.trim();
-  const addr=document.getElementById('address').value.trim();
-  if(!name||!phone||!addr)return alert('Please fill all fields');
-  const text=encodeURIComponent('[ORDER] '+JSON.stringify({name,phone,addr,cart}));
-  window.location.href=`https://line.me/R/ti/p/@924uwcib?text=${text}`;
-}
-function estimate(){
-  const km=parseFloat(document.getElementById('km').value||'0');
-  if(!(km>=0)){document.getElementById('ship-out').textContent='Enter distance in km';return;}
-  const est=Math.max(39,Math.round(25+7*km));
-  document.getElementById('ship-out').textContent=`Estimated delivery: ~${est} THB`;
-}
-renderCart();
-</script>
+    <!-- Citrus Orange Fruit Tea -->
+    <div class="card" data-sku="CITRUS-50">
+      <div class="ph">Citrus Orange Fruit Tea</div>
+      <div class="body">
+        <div class="title">Citrus Orange Fruit Tea</div>
+        <div class="muted">Sun-dried oranges, apples & hibiscus for a refreshing citrus aroma.</div>
+        <div class="section">
+          <label class="muted">Size</label><br>
+          <select data-price>
+            <option value="195">50 g — THB 195</option>
+            <option value="275">75 g — THB 275</option>
+          </select>
+        </div>
+        <div class="rowx">
+          <button class="pill" data-add>Add to cart</button>
+        </div>
+      </div>
+    </div>
 
-</body>
-</html>
+    <!-- Strawberries & Cream -->
+    <div class="card" data-sku="STRAW-CREAM-50">
+      <div class="ph">Strawberries & Cream</div>
+      <div class="body">
+        <div class="title">Strawberries & Cream</div>
+        <div class="muted">Black tea with strawberry pieces, goji berries & cand
