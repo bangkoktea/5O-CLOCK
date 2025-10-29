@@ -190,4 +190,110 @@
       <div class="ph">Strawberries & Cream</div>
       <div class="body">
         <div class="title">Strawberries & Cream</div>
-        <div class="muted">Black tea with strawberry pieces, goji berries & cand
+        <div class="muted">Black tea with strawberry pieces, goji berries & candied pineapple.</div>
+        <div class="section">
+          <label class="muted">Size</label><br>
+          <select data-price>
+            <option value="195">50 g — THB 195</option>
+            <option value="275">75 g — THB 275</option>
+          </select>
+        </div>
+        <div class="rowx">
+          <button class="pill" data-add>Add to cart</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Cart + Checkout -->
+<div class="container" id="cart">
+  <div class="h2">Your Cart</div>
+  <div id="cart-list" class="card-plain muted">No items yet</div>
+  <div class="h2" style="margin-top:18px">Checkout</div>
+  <div class="card-plain">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="muted">Name</label>
+        <input id="name" class="input" type="text" placeholder="Your name" autocomplete="name">
+      </div>
+      <div>
+        <label class="muted">Phone</label>
+        <input id="phone" class="input" type="tel" placeholder="(+66)" autocomplete="tel">
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label class="muted">Delivery address</label>
+      <textarea id="address" class="input" rows="3" placeholder="Street, condo, etc"></textarea>
+    </div>
+    <div class="row" style="gap:10px;margin-top:12px">
+      <button class="btn" onclick="checkout()">Checkout via LINE</button>
+      <a class="btn secondary" href="mailto:5oclock@gmail.com">Order via Email</a>
+    </div>
+    <div id="form-msg" class="muted" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="wrap">
+    Pickup point: Ramkhamhaeng 2, Indy 38/71 • Bangkok • Mon–Sat 10:00–19:00
+  </div>
+</footer>
+
+<script>
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+  const cart = [];
+  const cartCount = $('#cart-count');
+  const cartList = $('#cart-list');
+
+  function renderCart(){
+    $('#cart-count').textContent = cart.reduce((a,i)=>a+i.qty,0);
+    if(!cart.length){ cartList.textContent='No items yet'; return; }
+    cartList.innerHTML = cart.map(i=>(
+      `<div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:8px 0">
+        <span>${i.name} • ${i.size}g</span>
+        <span>${i.qty} × ${i.price} THB</span>
+      </div>`
+    )).join('');
+  }
+
+  function addItem(cardEl, preorder=false){
+    const title = $('.title', cardEl).textContent.trim();
+    const size = parseInt($('select[data-price]', cardEl).value, 10)===195?50:75;
+    const price = parseInt($('select[data-price]', cardEl).value, 10);
+    const key = `${title}-${size}`;
+    let it = cart.find(x=>x.key===key);
+    if(it) it.qty += 1; else cart.push({key,name:title,size,price,qty:1,preorder});
+    renderCart();
+  }
+
+  $$('[data-add]').forEach(btn=>{
+    btn.addEventListener('click', ()=> addItem(btn.closest('.card'), false));
+  });
+  $$('[data-pre]').forEach(btn=>{
+    btn.addEventListener('click', ()=> addItem(btn.closest('.card'), true));
+  });
+
+  function checkout(){
+    if(!cart.length){ alert('Cart empty'); return; }
+    const name = $('#name').value.trim();
+    const phone = $('#phone').value.trim();
+    const addr = $('#address').value.trim();
+    if(!name || !phone || !addr){
+      $('#form-msg').textContent = 'Please fill Name, Phone and Address';
+      return;
+    }
+    const payload = encodeURIComponent('[ORDER] '+JSON.stringify({
+      customer:{name,phone,address:addr}, items:cart, ts:new Date().toISOString()
+    }));
+    window.location.href = `https://line.me/R/ti/p/@924uwcib?text=${payload}`;
+  }
+
+  renderCart();
+</script>
+
+</body>
+</html>
