@@ -471,6 +471,52 @@ document.addEventListener('click', function(e){
     if (id === 'address') el.addEventListener('input', scheduleShippingRecalc);
   }
 });
+  // ==== TH phone autoprefix (+66) & normalization ====
+(function(){
+  const el = document.getElementById('custPhone');
+  if (!el) return;
+
+  function normalizeTH(v){
+    if (!v) return '';
+    let s = v.replace(/\s+/g,'');
+    if (s.startsWith('00')) s = '+' + s.slice(2);      // 00… -> +…
+    if (s.startsWith('+66')) {
+      s = '+66 ' + s.slice(3).replace(/^0+/, '');
+      return s;
+    }
+    if (s.startsWith('66')) {
+      s = '+66 ' + s.slice(2).replace(/^0+/, '');
+      return s;
+    }
+    if (s.startsWith('0')) {                            // 0XXXXXXXXX -> +66 XXXXXXXX
+      s = '+66 ' + s.slice(1);
+      return s;
+    }
+    return s.replace(/^\+66$/, '+66 ')
+            .replace(/^\+66(?=\d)/, '+66 ');
+  }
+
+  el.addEventListener('focus', () => {
+    if (!el.value.trim()) {
+      el.value = '+66 ';
+      setTimeout(() => { el.selectionStart = el.selectionEnd = el.value.length; }, 0);
+    }
+  });
+
+  const onChange = () => {
+    const before = el.value;
+    const after = normalizeTH(before);
+    if (after !== before) {
+      el.value = after;
+      el.selectionStart = el.selectionEnd = el.value.length;
+    }
+    if (typeof updateCart === 'function') updateCart();
+  };
+  el.addEventListener('input', onChange);
+  el.addEventListener('paste', () => requestAnimationFrame(onChange));
+  el.addEventListener('blur', () => { el.value = normalizeTH(el.value).trim(); });
+})();
+
 
 // open/close cart
 openCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
