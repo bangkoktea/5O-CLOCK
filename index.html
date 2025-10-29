@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>5 o’clock — Tea</title>
+  <style>
+    body{font-family:Inter,Arial;background:#0E0D12;color:#e5e7eb;margin:0}
+    .container{max-width:900px;margin:auto;padding:20px}
+    .brand{font-family:"Playfair Display",serif;font-size:1.5rem;margin-bottom:10px}
+    .btn{background:#A01226;color:#fff;border:none;border-radius:8px;padding:10px 16px;cursor:pointer;margin-top:8px}
+    .card{background:#16151c;padding:16px;margin-bottom:12px;border-radius:12px}
+    .input{width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid #333;background:#121019;color:#fff}
+    a{color:#e5e7eb;text-decoration:none} a:hover{text-decoration:underline}
+    header{background:#0b0b0b;border-bottom:1px solid #222;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+    .links a{margin-left:10px;padding:6px 10px;border-radius:8px;background:#1c1b22}
+    .links a.red{background:#A01226}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">5 o’clock</div>
+  <div class="links">
+    <a href="https://www.instagram.com/bangkok_tea_leaf" target="_blank">Instagram</a>
+    <a href="mailto:5oclock@gmail.com">Email</a>
+    <a href="https://line.me/R/ti/p/@924uwcib" target="_blank" class="red">Order via LINE</a>
+  </div>
+</header>
+
+<div class="container">
+  <h2>Small-batch flavored loose-leaf tea</h2>
+  <p>Pickup Ramkhamhaeng 2, Indy 38/71 • Delivery via Grab/Kerry</p>
+
+  <h3>Shop teas</h3>
+
+  <div class="card">
+    <b>Wild Cherry — 50 g</b><br>
+    Black tea with cherry pieces • 3–6 min • 95°C<br>
+    <b>195 THB</b><br>
+    <button class="btn" onclick="addToCart('Wild Cherry 50g',195)">Add to cart</button>
+  </div>
+
+  <div class="card">
+    <b>Taiga Blend — 75 g</b><br>
+    Black tea, blackberries, lingonberry leaves, currant<br>
+    <b>275 THB</b><br>
+    <button class="btn" onclick="addToCart('Taiga Blend 75g',275)">Add to cart</button>
+  </div>
+
+  <h3>Your Cart</h3>
+  <div id="cart" class="card">No items yet</div>
+
+  <h3>Checkout</h3>
+  <div class="card">
+    <label>Name</label>
+    <input id="name" class="input" type="text" placeholder="Your name">
+    <label>Phone</label>
+    <input id="phone" class="input" type="tel" placeholder="(+66)">
+    <label>Delivery address</label>
+    <textarea id="address" class="input" rows="3" placeholder="Street, condo, etc"></textarea>
+    <button class="btn" onclick="checkout()">Checkout via LINE</button>
+    <button class="btn" style="background:#333" onclick="clearCart()">Clear cart</button>
+    <div id="msg" style="color:#aaa;margin-top:8px"></div>
+  </div>
+
+  <h3>Delivery Estimator</h3>
+  <div class="card">
+    <label>Distance (km from Ramkhamhaeng 2, Indy 38/71):</label>
+    <input id="km" type="number" class="input" placeholder="e.g. 8">
+    <button class="btn" onclick="estimate()">Estimate</button>
+    <div id="ship-out" style="margin-top:8px;color:#aaa"></div>
+  </div>
+
+  <footer style="margin-top:30px;color:#777">
+    Pickup point: Ramkhamhaeng 2, Indy 38/71 • Bangkok • Mon–Sat 10:00–19:00<br>
+    © 5 o’clock — small batches of flavored loose-leaf tea
+  </footer>
+</div>
+
+<script>
+let cart = [];
+function renderCart(){
+  const box=document.getElementById('cart');
+  if(cart.length===0){box.textContent='No items yet';return;}
+  box.innerHTML = cart.map(i=>`${i.name} — ${i.qty} × ${i.price} THB`).join('<br>');
+}
+function addToCart(name,price){
+  const item=cart.find(i=>i.name===name);
+  if(item)item.qty++;else cart.push({name,price,qty:1});
+  renderCart();
+}
+function clearCart(){cart=[];renderCart();}
+function checkout(){
+  if(cart.length===0)return alert('Cart empty');
+  const name=document.getElementById('name').value.trim();
+  const phone=document.getElementById('phone').value.trim();
+  const addr=document.getElementById('address').value.trim();
+  if(!name||!phone||!addr)return alert('Please fill all fields');
+  const text=encodeURIComponent('[ORDER] '+JSON.stringify({name,phone,addr,cart}));
+  window.location.href=`https://line.me/R/ti/p/@924uwcib?text=${text}`;
+}
+function estimate(){
+  const km=parseFloat(document.getElementById('km').value||'0');
+  if(!(km>=0)){document.getElementById('ship-out').textContent='Enter distance in km';return;}
+  const est=Math.max(39,Math.round(25+7*km));
+  document.getElementById('ship-out').textContent=`Estimated delivery: ~${est} THB`;
+}
+renderCart();
+</script>
+
+</body>
+</html>
