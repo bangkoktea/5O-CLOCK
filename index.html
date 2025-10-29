@@ -525,13 +525,78 @@ closeCartBtn.addEventListener('click', function(){ cartDrawer.classList.add('hid
 fabCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
 mobileCheckoutBtn.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
 
-// LINE checkout
-checkoutBtn.addEventListener('click', function(){
-  var message = checkoutBtn.getAttribute('data-msg') || '';
-  try { navigator.clipboard.writeText(message); } catch(e) {}
-  var url = 'https://line.me/R/ti/p/' + encodeURIComponent(CONFIG.lineId);
-  window.open(url, '_blank');
+// === ORDER MESSAGE BUILDER (единообразно для LINE/Email/Checkout) ===
+function buildOrderMessage(){
+  var subtotal = 0;
+  var lines = cart.map(function(i){
+    if (i.id !== 'delivery') subtotal += i.price * i.qty;
+    return '• ' + i.name + (i.variant ? ' ('+i.variant+')' : '') +
+           (i.preorder ? ' [PREORDER]' : '') +
+           ' x' + i.qty + ' — ' + CONFIG.currency + ' ' + i.price;
+  }).join('\n');
+
+  var shipping = (typeof state.shippingTHB === 'number')
+    ? state.shippingTHB
+    : ((subtotal >= CONFIG.freeShippingThreshold) ? 0 : 70);
+
+  var total = cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
+
+  var name = (document.getElementById('custName').value || '').trim();
+  var phone = (document.getElementById('custPhone').value || '').trim();
+  var address = (document.getElementById('address').value || '').trim();
+
+  var distanceNote = (typeof state.distanceKm === 'number')
+    ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
+    : '';
+
+  var text =
+    "Order from 5 o'clock Tea\n" +
+    lines +
+    '\n\nSubtotal: ' + fmt(subtotal) +
+    (shipping>0 ? '\nDelivery: ' + fmt(shipping) : '') +
+    '\nTotal: ' + fmt(total) + distanceNote +
+    '\n\nName: ' + name +
+    '\nPhone: ' + phone +
+    '\nAddress: ' + address;
+
+  return {
+    text: text,
+    subject: "Order — 5 o'clock Tea (" + fmt(total) + ")"
+  };
+}
+
+// === Email: формируем перед переходом ===
+emailBtn.addEventListener('click', function(e){
+  var m = buildOrderMessage();
+  this.href = "mailto:5OCLOCK@GMAIL.COM?subject=" +
+              encodeURIComponent(m.subject) +
+              "&body=" + encodeURIComponent(m.text);
 });
+
+// === LINE / Checkout (с шарингом и fallback) ===
+async function openLineWithMessage(){
+  var m = buildOrderMessage();
+
+  if (navigator.share){
+    try{
+      await navigator.share({ title: "5 o'clock Tea", text: m.text });
+      return;
+    }catch(e){}
+  }
+
+  var shareUrl = 'https://line.me/R/share?text=' + encodeURIComponent(m.text);
+  var opened = window.open(shareUrl, '_blank');
+  if (opened) return;
+
+  try { await navigator.clipboard.writeText(m.text); } catch(_){}
+  alert('Order text copied. Paste it into LINE chat.');
+  var chatUrl = 'https://line.me/R/ti/p/' + encodeURIComponent(CONFIG.lineId);
+  window.open(chatUrl, '_blank');
+}
+
+// кнопки
+checkoutBtn.addEventListener('click', openLineWithMessage);
+mobileCheckoutBtn.addEventListener('click', openLineWithMessage);
 
 document.getElementById('year').textContent = new Date().getFullYear();
 updateCart();
