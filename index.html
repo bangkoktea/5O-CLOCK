@@ -34,6 +34,15 @@
   #mobileBar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
                background: rgba(255,255,255,.95); backdrop-filter: blur(10px);
                box-shadow: 0 -8px 24px rgba(0,0,0,.12); }
+
+  /* ==== Map Picker modal ==== */
+  #mapModal{position:fixed;inset:0;z-index:80;display:none}
+  #mapModal.show{display:block}
+  #mapBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+  #mapSheet{position:absolute;right:0;left:0;top:5%;margin:0 auto;width:min(700px,94%);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  #mapHeader{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee}
+  #mapCanvas{width:100%;height:420px}
+  #mapFooter{display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;border-top:1px solid #eee}
 </style>
 </head>
 <body class="text-sans bg-[#faf8f5] text-zinc-800">
@@ -52,7 +61,7 @@
 </header>
 
 <section class="bg-gradient-to-br from-amber-100 to-zinc-100">
-  <div class="max-w-6xl mx-auto px-4 hero-wrap">
+  <div class="max-w-6xl mx_auto px-4 hero-wrap">
     <div class="bg-white/85 backdrop-blur card p-5 sm:p-10 max-w-2xl">
       <h1 class="logo text-[2rem] sm:text-5xl leading-tight">Morning tea, crafted with love.</h1>
       <p class="mt-3 text-zinc-700 text-[15px] sm:text-base">Small-batch blends made in Thailand. Order fast via LINE or Email.</p>
@@ -89,7 +98,7 @@
     <h3 class="logo text-xl sm:text-2xl">Questions or wholesale?</h3>
     <div class="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
       <a id="lineMain" href="https://line.me/R/ti/p/@924uwcib" target="_blank" class="btn px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold w-full sm:w-auto touch-target">LINE</a>
-      <a href="mailto:5OCLOCK@GMAIL.COM" class="btn px-5 py-3 rounded-full bg-black text-white text-sm font-semibold w-full sm:w-auto touch-target">Email: 5OCLOCK@GMAIL.COM</a>
+      <a href="mailto:5OCLOCK@GMAIL.COM" class="btn px-5 py-3 rounded-full bg-black text-white text-sm font-semibold w-full sm:w_auto touch-target">Email: 5OCLOCK@GMAIL.COM</a>
     </div>
     <p class="mt-3 text-xs text-zinc-500">LINE ID: <strong>@924uwcib</strong></p>
   </div>
@@ -128,10 +137,12 @@
         <div><label for="custPhone" class="text-sm font-medium">Phone number</label><input id="custPhone" type="tel" inputmode="tel" autocomplete="tel" class="w-full border rounded-lg p-3 text-[15px]" placeholder="+66 ..."></div>
         <div><label for="address" class="text-sm font-medium">Delivery address</label><input id="address" type="text" autocomplete="street-address" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Street, district, Bangkok, ZIP" /><p id="bkkNote" class="text-xs text-amber-700 mt-1 hidden">Delivery in Bangkok only / จัดส่งเฉพาะในกรุงเทพฯ</p></div>
       </div>
-      <button type="button" id="useLocationBtn"
-        class="mt-2 w-full rounded-full bg-zinc-100 text-sm py-2 hover:bg-zinc-200">
-        📍 Use my current location
-      </button>
+
+      <!-- Geo + Map buttons -->
+      <div class="mt-2 grid grid-cols-2 gap-2">
+        <button type="button" id="useLocationBtn" class="rounded-full bg-zinc-100 text-sm py-2 hover:bg-zinc-200">📍 Use my location</button>
+        <button type="button" id="pickOnMapBtn" class="rounded-full bg-zinc-100 text-sm py-2 hover:bg-zinc-200">🗺 Pick on map</button>
+      </div>
 
       <div class="flex items-center justify-between text-lg"><span>Total</span><strong id="cartTotal">THB 0</strong></div>
       <button id="checkoutBtn" class="btn block w-full px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Send order via LINE</button>
@@ -139,6 +150,21 @@
       <p class="text-xs text-zinc-500">We’ll confirm delivery & payment in chat.</p>
     </div>
   </aside>
+</div>
+
+<!-- Map Picker Modal -->
+<div id="mapModal" role="dialog" aria-modal="true">
+  <div id="mapBackdrop"></div>
+  <div id="mapSheet">
+    <div id="mapHeader">
+      <strong class="logo">Choose location</strong>
+      <button id="mapClose" class="btn px-3 py-1 rounded-full bg-zinc-100">✕</button>
+    </div>
+    <div id="mapCanvas"></div>
+    <div id="mapFooter">
+      <button id="mapUseHere" class="btn px-4 py-2 rounded-full bg-black text-white text-sm">Use this spot</button>
+    </div>
+  </div>
 </div>
 
 <footer class="py-10 text-center text-sm text-zinc-500">© <span id="year"></span> 5 o’clock Tea — Bangkok</footer>
@@ -158,24 +184,24 @@ const CONFIG = {
     minChargeTHB: 0
   },
   products: [
-    { id: 'wild-cherry', name: 'Wild Cherry', img: 'images/wild-cherry.jpg',
+    { id: 'wild-cherry', name: 'Wild Cherry', img: 'images/wild_cherry.jpg',
       options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
       desc: 'Black tea with cherry notes — bright and aromatic.' },
-    { id: 'taiga-blend', name: 'Taiga Blend', img: 'images/taiga-blend.jpg',
+    { id: 'taiga-blend', name: 'Taiga Blend', img: 'images/taiga_blend.jpg',
       options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
       desc: 'Black tea, berries & forest vibes. Cozy and bold.' },
-    { id: 'rose-strawberry', name: 'Rose Strawberry Fruit Tea', img: 'images/rose-strawberry.jpg',
+    { id: 'rose-strawberry', name: 'Rose Strawberry Fruit Tea', img: 'images/rose_strawberry.jpg',
       options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
       desc: 'Black tea with apples, chokeberry, strawberry & rose petals.' },
-    { id: 'rose-hibiscus', name: 'Rose Hibiscus Fruit Tea', img: 'images/rose-hibiscus.jpg',
+    { id: 'rose-hibiscus', name: 'Rose Hibiscus Fruit Tea', img: 'images/rose_hibiscus.jpg',
       options: [ { label: '50 g', price: 195 } ],
       desc: 'Hibiscus, rose petals & berries for a ruby-red infusion.',
       outOfStock: true },
-    { id: 'citrus-orange', name: 'Citrus Orange Fruit Tea', img: 'images/citrus-orange.jpg',
+    { id: 'citrus-orange', name: 'Citrus Orange Fruit Tea', img: 'images/citrus_orange.jpg',
       options: [ { label: '50 g', price: 195 } ],
       desc: 'Sun-dried oranges, apples & hibiscus for a refreshing citrus aroma.',
       outOfStock: true },
-    { id: 'strawberries-cream', name: 'Strawberries & Cream', img: 'images/strawberries-cream.jpg',
+    { id: 'strawberries-cream', name: 'Strawberries & Cream', img: 'images/strawberries_cream.jpg',
       options: [ { label: '50 g', price: 195 } ],
       desc: 'Black tea with strawberry pieces, goji berries & candied pineapple.' }
   ]
@@ -265,7 +291,7 @@ function debounce(fn, ms) {
   };
 }
 
- async function geocodeAddressIfNeeded(addressText) {
+async function geocodeAddressIfNeeded(addressText) {
   return new Promise((resolve) => {
     if (!window.google || !google.maps) {
       resolve(addressText);
@@ -460,62 +486,88 @@ checkoutBtn.addEventListener('click', function(){
 
 document.getElementById('year').textContent = new Date().getFullYear();
 updateCart();
-// ================== USE MY LOCATION ==================
-document.getElementById('useLocationBtn')?.addEventListener('click', async () => {
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported on this device.");
-    return;
-  }
 
+// ================== USE MY LOCATION (with REST fallback) ==================
+document.getElementById('useLocationBtn')?.addEventListener('click', async () => {
+  if (!navigator.geolocation) { alert("Geolocation is not supported on this device."); return; }
   const btn = document.getElementById('useLocationBtn');
-  btn.textContent = 'Locating...';
-  btn.disabled = true;
+  btn.textContent = 'Locating...'; btn.disabled = true;
 
   navigator.geolocation.getCurrentPosition(async (pos) => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
-    console.log('📍 Coordinates:', lat, lng);
 
-    const geocoder = new google.maps.Geocoder();
+    const fill = (addr) => {
+      document.getElementById('address').value = addr || '';
+      updateCart(); if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+      btn.textContent = '📍 Use my location'; btn.disabled = false;
+    };
 
-    geocoder.geocode({ location: { lat, lng } }, async (results, status) => {
-      if (status === 'OK' && results[0]) {
-        const addr = results[0].formatted_address;
-        document.getElementById('address').value = addr;
-        updateCart();
-        if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
-      } else {
-        console.warn('Geocoder failed:', status);
-        // fallback через REST API (работает даже если JS-клиент не дал ответа)
-        try {
-          const resp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&language=th&region=TH`);
-          const data = await resp.json();
-          if (data.status === 'OK' && data.results[0]) {
-            const addr = data.results[0].formatted_address;
-            document.getElementById('address').value = addr;
-            updateCart();
-            if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
-          } else {
-            alert("Could not find address. Please enter manually.");
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Reverse geocoding failed. Please enter manually.");
+    try {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, async (results, status) => {
+        if (status === 'OK' && results[0]) {
+          fill(results[0].formatted_address);
+        } else {
+          try {
+            const resp = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&language=th&region=TH`);
+            const data = await resp.json();
+            if (data.status === 'OK' && data.results[0]) fill(data.results[0].formatted_address);
+            else { alert("Could not find address. Please enter manually."); fill(''); }
+          } catch (e) { console.error(e); alert("Reverse geocoding failed. Please enter manually."); fill(''); }
         }
-      }
-      btn.textContent = '📍 Use my current location';
-      btn.disabled = false;
-    });
+      });
+    } catch (err) { console.error(err); alert("Reverse geocoding failed."); fill(''); }
   }, (err) => {
-    console.error(err);
-    alert("Unable to get location. Please allow access or enter manually.");
-    btn.textContent = '📍 Use my current location';
-    btn.disabled = false;
+    console.error(err); alert("Unable to get location. Please allow access or enter manually.");
+    const btn = document.getElementById('useLocationBtn'); btn.textContent='📍 Use my location'; btn.disabled=false;
   }, { enableHighAccuracy: true, timeout: 10000 });
-}); 
+});
+
+// ================== MAP PICKER ==================
+let mapPicker = { map:null, marker:null, inited:false };
+function openMapPicker() {
+  const modal = document.getElementById('mapModal');
+  modal.classList.add('show');
+  if (!mapPicker.inited) {
+    const bkkCenter = { lat: 13.7563, lng: 100.5018 };
+    mapPicker.map = new google.maps.Map(document.getElementById('mapCanvas'), {
+      center: bkkCenter, zoom: 12, clickableIcons:false, mapTypeControl:false, streetViewControl:false
+    });
+    mapPicker.marker = new google.maps.Marker({ position: bkkCenter, map: mapPicker.map, draggable:true });
+    mapPicker.map.addListener('click', (e) => { mapPicker.marker.setPosition(e.latLng); });
+    mapPicker.inited = true;
+  }
+}
+function closeMapPicker(){ document.getElementById('mapModal').classList.remove('show'); }
+
+document.getElementById('pickOnMapBtn')?.addEventListener('click', openMapPicker);
+document.getElementById('mapBackdrop')?.addEventListener('click', closeMapPicker);
+document.getElementById('mapClose')?.addEventListener('click', closeMapPicker);
+
+document.getElementById('mapUseHere')?.addEventListener('click', async () => {
+  const pos = mapPicker.marker.getPosition();
+  const lat = pos.lat(), lng = pos.lng();
+  const geocoder = new google.maps.Geocoder();
+  geocoder.geocode({ location: { lat, lng } }, async (results, status) => {
+    let addr = '';
+    if (status==='OK' && results[0]) addr = results[0].formatted_address;
+    else {
+      try {
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&language=th&region=TH`;
+        const data = await fetch(url).then(r=>r.json());
+        if (data.status==='OK' && data.results[0]) addr = data.results[0].formatted_address;
+      } catch(_) {}
+    }
+    if (!addr) { alert('Could not find address. You can still type it manually.'); return; }
+    document.getElementById('address').value = addr;
+    closeMapPicker();
+    updateCart(); if (typeof scheduleShippingRecalc==='function') scheduleShippingRecalc();
+  });
+});
 </script>
 
-<!-- Google Places (Autocomplete only) -->
+<!-- Google Places / Maps -->
 <script>
 function initMaps() {
   const addrEl = document.getElementById('address');
@@ -525,32 +577,33 @@ function initMaps() {
   const tryInit = () => {
     tries++;
     if (window.google && google.maps && google.maps.places) {
+      // смещение результатов к Бангкоку
+      const bangkokBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(13.4, 100.3),  // SW
+        new google.maps.LatLng(14.1, 101.1)   // NE
+      );
       const ac = new google.maps.places.Autocomplete(addrEl, {
         fields: ['formatted_address', 'geometry'],
         componentRestrictions: { country: "th" },
+        bounds: bangkokBounds,
+        strictBounds: false,
         types: ['geocode', 'establishment']
       });
-
       ac.addListener('place_changed', () => {
         const place = ac.getPlace();
-        if (place && place.formatted_address) {
-          addrEl.value = place.formatted_address;
-        }
-        updateCart();
-        if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+        if (place && place.formatted_address) { addrEl.value = place.formatted_address; }
+        updateCart(); if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
       });
-
-      console.log('✅ Google Maps initialized (Thailand restriction)');
+      console.log('✅ Google Maps initialized (TH + Bangkok bias)');
     } else if (tries < 20) {
       setTimeout(tryInit, 250);
     } else {
       console.warn('⚠️ Google Maps failed to load');
     }
   };
-
   tryInit();
 }
 </script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&libraries=places&callback=initMaps"></script>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&libraries=places,geometry&language=th&region=TH&callback=initMaps"></script>
 </body>
 </html>
