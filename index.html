@@ -53,6 +53,12 @@
       Cart <span id="cartCount" class="ml-2 inline-flex items-center justify-center w-5 h-5 text-[11px] rounded-full bg-white text-black">0</span>
     </button>
   </div>
+  <!-- Mapbox Address Autofill (Address + Geocoding) -->
+<link rel="stylesheet" href="https://api.mapbox.com/search-js/v1.0.0-beta.19/web.css">
+<script src="https://api.mapbox.com/search-js/v1.0.0-beta.19/web.js"></script>
+<script>
+  window.MAPBOX_TOKEN = 'PASTE_YOUR_MAPBOX_PUBLIC_TOKEN_HERE';
+</script>
 </header>
 
 <section class="bg-gradient-to-br from-amber-100 to-zinc-100">
@@ -131,6 +137,11 @@
         <div><label for="custName" class="text-sm font-medium">Name</label><input id="custName" type="text" inputmode="text" autocomplete="name" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Your full name"></div>
         <div><label for="custPhone" class="text-sm font-medium">Phone number</label><input id="custPhone" type="tel" inputmode="tel" autocomplete="tel" class="w-full border rounded-lg p-3 text-[15px]" placeholder="+66 ..."></div>
         <div><label for="address" class="text-sm font-medium">Delivery address</label><input id="address" type="text" autocomplete="street-address" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Street, district, Bangkok, ZIP" /><p id="bkkNote" class="text-xs text-amber-700 mt-1 hidden">Delivery in Bangkok only / จัดส่งเฉพาะในกรุงเทพฯ</p></div>
+        <input id="addr_lat" type="hidden">
+        <input id="addr_lng" type="hidden">
+        <input id="addr_postal" type="hidden">
+        <input id="addr_city" type="hidden">
+        <p id="addrWarn" class="text-xs text-red-600 mt-1 hidden">Delivery available in Bangkok (ZIP 10xxx) only.</p>
       </div>
 
       <!-- Geo + Map buttons -->
@@ -200,6 +211,68 @@ const CONFIG = {
   ]
 };
 function fmt(v){ return CONFIG.currency + ' ' + Number(v).toLocaleString('en-US'); }
+<script>
+// ===== MAPBOX AUTOFILL (address → coords + city + postal) =====
+let lastGeocode = null;
+
+function attachMapboxAutofill(){
+  const el = document.getElementById('address');
+  if (!el || !window.mapboxsearch) return;
+
+  // Визуальные подсказки Mapbox поверх input
+  const autofill = new mapboxsearch.MapboxAddressAutofill({
+    accessToken: window.MAPBOX_TOKEN,
+    options: { country: ['TH'], language: 'th,en' }
+  });
+  autofill.attach(el);
+
+  // дебаунс геокодинга
+  let t = null;
+  const onChange = () => {
+    clearTimeout(t);
+    t = setTimeout(async () => { await geocodeAddress(el.value.trim()); }, 300);
+  };
+  el.addEventListener('input', onChange);
+  el.addEventListener('change', onChange);
+}
+
+async function geocodeAddress(text){
+  const latEl = document.getElementById('addr_lat');
+  const lngEl = document.getElementById('addr_lng');
+  const postalEl = document.getElementById('addr_postal');
+  const cityEl = document.getElementById('addr_city');
+  const warn = document.getElementById('addrWarn');
+
+  latEl.value = ''; lngEl.value = ''; postalEl.value = ''; cityEl.value = '';
+  warn.classList.add('hidden');
+
+  if (!text) { lastGeocode = null; scheduleShippingRecalc(); return; }
+
+  try{
+    const url = `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(text)}&country=TH&limit=1&access_token=${window.MAPBOX_TOKEN}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const f = data?.features?.[0];
+    if (!f) { lastGeocode = null; scheduleShippingRecalc(); return; }
+
+    const [lng, lat] = f.geometry.coordinates;
+    const props = f.properties || {};
+    const city = props.place || props.locality || props.region || '';
+    const postal = props.postcode || '';
+
+    latEl.value = lat || '';
+    lngEl.value = lng || '';
+    cityEl.value = city || '';
+    postalEl.value = postal || '';
+
+    lastGeocode = { lat, lng, city, postal };
+  }catch(_){
+    lastGeocode = null;
+  }finally{
+    scheduleShippingRecalc();
+  }
+}
+</script>
 
 // ================== PRODUCTS ==================
 (function renderProducts(){
@@ -285,26 +358,89 @@ function debounce(fn, ms) {
 }
 
 async function recalcShippingByDistance(subtotalTHB) {
-  try {
-    const addressEl = document.getElementById('address');
-    const dstText = (addressEl && addressEl.value ? addressEl.value : "").trim();
-    if (!dstText) { state.shippingTHB = null; state.distanceKm = null; return; }
+  // Бесплатно по порогу — сразу 0
+  if ((Number(subtotalTHB)||0) >= CONFIG.freeShippingThreshold) {
+    state.shippingTHB = 0; state.distanceKm = null; return;
+  }
 
-    // Геокод точки отправления (кеш)
-    if (!state.pickupLL) {
-      const geo = new google.maps.Geocoder();
-      await new Promise(res => {
-        geo.geocode({ address: CONFIG.shippingCalc.pickupAddress }, (r, s) => {
-          if (s === 'OK' && r[0] && r[0].geometry) {
-            state.pickupLL = {
-              lat: r[0].geometry.location.lat(),
-              lng: r[0].geometry.location.lng()
-            };
-          }
-          res();
-        });
-      });
+  const latEl = document.getElementById('addr_lat');
+  const lngEl = document.getElementById('addr_lng');
+  const postalEl = document.getElementById('addr_postal');
+  const cityEl = document.getElementById('addr_city');
+  const warn = document.getElementById('addrWarn');
+  const bkkNote = document.getElementById('bkkNote');
+
+  const lat = parseFloat(latEl.value || '');
+  const lng = parseFloat(lngEl.value || '');
+  const postal = (postalEl.value || '').trim();
+  const city = (cityEl.value || '').trim().toLowerCase();
+
+  // Валидация зоны обслуживания: Bangkok + индекс 10xxx
+  const isBangkok = !!city && city.toLowerCase().includes('bangkok');
+  const isBkkZip = /^\s*10\d{3}\s*$/.test(postal);
+
+  if (!lat || !lng) { state.shippingTHB = null; state.distanceKm = null; return; }
+
+  // показываем подсказку, если не БКК
+  const outOfZone = !(isBangkok && isBkkZip);
+  bkkNote?.classList.toggle('hidden', !outOfZone);
+  warn?.classList.toggle('hidden', !outOfZone);
+
+  // Если пользователь вне зоны — показываем «индивидуально»
+  if (outOfZone) { state.shippingTHB = null; state.distanceKm = null; return; }
+
+  // Координаты склада — геокодим 1 раз (кеш)
+  if (!state.pickupLL) {
+    // Можно захардкодить, чтобы не геокодить: координаты твоего адреса
+    // (Ramkhamhaeng 2, Indy 38/71). Если знаешь точку — впиши её,
+    // иначе — оставим быстрый forward geocode по Mapbox.
+    try {
+      const q = encodeURIComponent(CONFIG.shippingCalc.pickupAddress);
+      const u = `https://api.mapbox.com/search/geocode/v6/forward?q=${q}&country=TH&limit=1&access_token=${window.MAPBOX_TOKEN}`;
+      const rr = await fetch(u); const dd = await rr.json();
+      const ff = dd?.features?.[0];
+      if (ff) {
+        state.pickupLL = { lat: ff.geometry.coordinates[1], lng: ff.geometry.coordinates[0] };
+      }
+    } catch(_) {}
+  }
+
+  // На всякий, если не получили — не считаем
+  if (!state.pickupLL) { state.shippingTHB = null; state.distanceKm = null; return; }
+
+  // Для отображения расстояния (по прямой, как раньше)
+  try {
+    const km = google.maps.geometry.spherical.computeDistanceBetween(
+      new google.maps.LatLng(state.pickupLL.lat, state.pickupLL.lng),
+      new google.maps.LatLng(lat, lng)
+    ) / 1000;
+    state.distanceKm = km;
+  } catch(_){
+    state.distanceKm = null;
+  }
+
+  // РЕАЛЬНЫЙ тариф через наш серверный /api/quote
+  try {
+    const payload = {
+      pickup: state.pickupLL,
+      dropoff: { lat, lng },
+      serviceType: 'MOTORCYCLE' // по умолчанию; при желании — делай селектор
+    };
+    const r = await fetch('/api/quote', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!r.ok) throw new Error('Bad quotation');
+    const q = await r.json();
+    // Ожидаем структуру { amountTHB: number }
+    if (typeof q.amountTHB === 'number') {
+      state.shippingTHB = q.amountTHB;
+      return;
     }
+    // Фоллбек, если прокси вернул что-то иное
+    state.shippingTHB = null;
+  } catch(e){
+    console.warn('Quotation failed', e);
+    state.shippingTHB = null; // покажем «оценку»/заглушку в UI
+  }
+}
 
     // Геокод адреса доставки
     const dstLL = await new Promise((resolve) => {
@@ -602,6 +738,8 @@ mobileCheckoutBtn.addEventListener('click', openLineWithMessage);
 document.getElementById('year').textContent = new Date().getFullYear();
 updateCart();
 
+attachMapboxAutofill();
+
 // ================== USE MY LOCATION (stable) ==================
 (function(){
   const btn = document.getElementById('useLocationBtn');
@@ -658,10 +796,17 @@ updateCart();
 
       if (addr) {
         document.getElementById('address').value = addr;
-        updateCart(); if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+        setHiddenAddressMeta(addr, lat, lng);
+        updateCart();
+        if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
       } else {
-        alert('Could not resolve your location to an address. Please pick on map.');
+        // Даже если адрес не получили — координаты есть, сохраним их
+        setHiddenAddressMeta('', lat, lng);
+        alert('Could not resolve your location to an address. You can still pick a point on the map or type the address including ZIP.');
+        updateCart();
+        if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
       }
+
     } catch (e) {
       console.error(e);
       alert('Unable to get your precise location. You can select it on the map.');
@@ -721,22 +866,39 @@ document.getElementById('mapClose')?.addEventListener('click', closeMapPicker);
 document.getElementById('mapUseHere')?.addEventListener('click', async () => {
   const pos = mapPicker.marker.getPosition();
   const lat = pos.lat(), lng = pos.lng();
-  const geocoder = new google.maps.Geocoder();
-  geocoder.geocode({ location: { lat, lng } }, async (results, status) => {
-    let addr = '';
-    if (status==='OK' && results[0]) addr = results[0].formatted_address;
-    else {
-      try {
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&language=th&region=TH`;
-        const data = await fetch(url).then(r=>r.json());
-        if (data.status==='OK' && data.results[0]) addr = data.results[0].formatted_address;
-      } catch(_) {}
+
+  // 1) пробуем Mapbox reverse → адрес + postal + city
+  let addr='', postal='', city='';
+  try{
+    const url = `https://api.mapbox.com/search/geocode/v6/reverse?longitude=${lng}&latitude=${lat}&limit=1&access_token=${window.MAPBOX_TOKEN}`;
+    const r = await fetch(url); const j = await r.json();
+    const f = j?.features?.[0];
+    if (f){
+      addr = f.properties?.full_address || f.properties?.name || f.properties?.place_formatted || f.properties?.context?.place || '';
+      postal = f.properties?.postcode || '';
+      city = f.properties?.place || f.properties?.locality || f.properties?.region || '';
     }
-    if (!addr) { alert('Could not find address. You can still type it manually.'); return; }
-    document.getElementById('address').value = addr;
-    closeMapPicker();
-    updateCart(); if (typeof scheduleShippingRecalc==='function') scheduleShippingRecalc();
-  });
+  }catch(_){}
+
+  // 2) если Mapbox не вернул адекватный адрес — fallback на Google (как было)
+  if (!addr){
+    const geocoder = new google.maps.Geocoder();
+    await new Promise((resolve)=>{
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status==='OK' && results[0]) addr = results[0].formatted_address || '';
+        resolve();
+      });
+    });
+  }
+
+  document.getElementById('address').value = addr || '';
+  document.getElementById('addr_lat').value = lat;
+  document.getElementById('addr_lng').value = lng;
+  document.getElementById('addr_postal').value = postal || '';
+  document.getElementById('addr_city').value = city || '';
+
+  closeMapPicker();
+  updateCart(); if (typeof scheduleShippingRecalc==='function') scheduleShippingRecalc();
 });
 </script>
 
