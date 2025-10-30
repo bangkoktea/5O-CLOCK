@@ -158,6 +158,25 @@ function wireCheckout(){
     mobileCheckoutBtn?.setAttribute('data-msg', msg);
   };
 
+  // оборачиваем updateCart, чтобы data-msg обновлялся вместе с корзиной
+  if (typeof window.updateCart === 'function') {
+    const originalUpdate = window.updateCart;
+    window.updateCart = function(){
+      originalUpdate.apply(this, arguments);
+      setMsgAttr();
+    };
+  }
+
+  setMsgAttr();
+
+  // по одному обработчику на кнопки
+  checkoutBtn?.addEventListener('click', (e) => { e.preventDefault(); openLineWithMessage(); });
+  mobileCheckoutBtn?.addEventListener('click', (e) => { e.preventDefault(); openLineWithMessage(); });
+}
+
+// Запускаем, когда DOM готов — чтобы элементы уже существовали
+document.addEventListener('DOMContentLoaded', () => { wireCheckout(); });
+
   // если уже есть updateCart, оборачиваем — чтобы data-msg обновлялся вместе с корзиной
   if (typeof window.updateCart === 'function') {
     const originalUpdate = window.updateCart;
