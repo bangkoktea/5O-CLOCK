@@ -1,101 +1,101 @@
-// Netlify Function: Lalamove Quotation (REAL)
-// ВАЖНО: Никаких моков. Если подпись/ключи неверные — вернём
-// прозрачную ошибку Lalamove с кодом/текстом для быстрого дебага.
+// netlify/functions/lalamove-quote.mjs
+export const config = { path: "/.netlify/functions/lalamove-quote" };
 
-import crypto from 'node:crypto';
+const {
+  LALAMOVE_API_KEY,
+  LALAMOVE_API_SECRET,
+  LALAMOVE_BASE_URL,   // пример: https://rest.sandbox.lalamove.com
+  LALAMOVE_COUNTRY,    // TH
+  LALAMOVE_MARKET      // BKK
+} = process.env;
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type'
-};
-
-// ——— подпись по Lalamove v3 ———
-// signString = `${timestamp}\r\n${method}\r\n${path}\r\n\r\n${body}`
-// signature  = hex(HMAC-SHA256(secret, signString))
-// Authorization: `hmac ${apiKey}:${signature}`
-
-function hmacSign({ ts, method, path, body, secret }) {
-  const signString = `${ts}\r\n${method.toUpperCase()}\r\n${path}\r\n\r\n${body}`;
-  return crypto.createHmac('sha256', secret).update(signString).digest('hex');
-}
-
-// Хелпер для ответа
-function json(code, payload) {
-  return { statusCode: code, headers: { 'Content-Type':'application/json', ...CORS }, body: JSON.stringify(payload) };
-}
-
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
-  if (event.httpMethod !== 'POST')   return json(405, { ok:false, error:{ code:405, message:'Use POST' } });
-
-  // ——— ENV ———
-  const {
-    LALAMOVE_API_KEY,
-    LALAMOVE_API_SECRET,
-    LALAMOVE_BASE_URL,   // напр. https://rest.sandbox.lalamove.com  или https://rest.lalamove.com
-    LALAMOVE_MARKET,     // напр. TH
-    LALAMOVE_COUNTRY     // напр. TH
-  } = process.env;
-
-  if (!LALAMOVE_API_KEY || !LALAMOVE_API_SECRET || !LALAMOVE_BASE_URL || !LALAMOVE_MARKET || !LALAMOVE_COUNTRY) {
-    return json(500, { ok:false, error:{ code:'MISSING_ENV', message:'Missing Lalamove env vars (API_KEY/SECRET/BASE_URL/MARKET/COUNTRY)' } });
-  }
-
-  // ——— входные данные ———
-  let req;
-  try { req = JSON.parse(event.body || '{}'); }
-  catch { return json(400, { ok:false, error:{ code:400, message:'Bad JSON' } }); }
-
-  const { pickup, dropoff, serviceType = 'MOTORCYCLE' } = req || {};
-  if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
-    return json(400, { ok:false, error:{ code:400, message:'pickup/dropoff {lat,lng} required' } });
-  }
-
-  // ——— формируем тело запроса Lalamove /v3/quotations ———
-  const path = '/v3/quotations';
-  const url  = new URL(path, LALAMOVE_BASE_URL).toString();
-  // минимально достаточное тело: serviceType + stops
-  const llmBodyObj = {
-    serviceType,
-    stops: [
-      { lat: String(pickup.lat),  lng: String(pickup.lng)  },
-      { lat: String(dropoff.lat), lng: String(dropoff.lng) }
-    ],
-    // опционально: можно конкретизировать вес/категорию, если аккаунт того требует
-    // item:{ quantity:1, weight:'LESS_THAN_3_KG', categories:['FOOD_DELIVERY'] },
-    isRouteOptimized: false
-  };
-  const bodyStr = JSON.stringify(llmBodyObj);
-
-  // ——— подпись ———
-  const ts = Date.now().toString(); // миллисекунды — как требует Lalamove
-  const signature = hmacSign({
-    ts, method:'POST', path, body: bodyStr, secret: LALAMOVE_API_SECRET
+function json(status, body, extra = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      ...extra
+    }
   });
+}
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `hmac ${LALAMOVE_API_KEY}:${signature}`,
-    'X-LLM-Market':  LALAMOVE_MARKET,
-    'X-LLM-Country': LALAMOVE_COUNTRY,
-    'X-LLM-Request-Timestamp': ts
+export default async (req) => {
+  if (req.method !== "POST") return json(405, { error: "Method Not Allowed" });
+
+  if (!LALAMOVE_API_KEY || !LALAMOVE_API_SECRET || !LALAMOVE_BASE_URL || !LALAMOVE_COUNTRY || !LALAMOVE_MARKET) {
+    return json(500, { error: "Missing Lalamove keys" });
+  }
+
+  let payload;
+  try {
+    payload = await req.json();
+  } catch {
+    return json(400, { error: "Bad JSON" });
+  }
+
+  const { pickup, dropoff, serviceType = "MOTORCYCLE" } = payload || {};
+  if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
+    return json(400, { error: "pickup/dropoff {lat,lng} required" });
+  }
+
+  // Подпись Lalamove (HMAC SHA256)
+  const timestamp = Date.now().toString();
+  const method = "POST";
+  const path = "/v3/quotations";
+  const body = {
+    scheduleAt: "ASAP",
+    serviceType,
+    language: "en_TH",
+    stops: [
+      { coordinates: { lat: pickup.lat, lng: pickup.lng } },
+      { coordinates: { lat: dropoff.lat, lng: dropoff.lng } }
+    ],
+    requesterContact: { name: "Web", phone: "0000000000" }
   };
+
+  const rawBody = JSON.stringify(body);
+
+  // Строка для подписи: <timestamp>\r\n<method>\r\n<path>\r\n<rawBody>
+  const toSign = `${timestamp}\r\n${method}\r\n${path}\r\n${rawBody}`;
+
+  // Вычисляем HMAC
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(LALAMOVE_API_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sigBuf = await crypto.subtle.sign("HMAC", key, enc.encode(toSign));
+  const signature = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+  const auth =
+    `hmac ${LALAMOVE_API_KEY}:${timestamp}:${signature}`;
 
   try {
-    const r = await fetch(url, { method:'POST', headers, body: bodyStr });
+    const r = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": auth,
+        "Accept": "application/json",
+        "X-LLM-Country": LALAMOVE_COUNTRY,
+        "X-LLM-Market": LALAMOVE_MARKET
+      },
+      body: rawBody
+    });
+
     const text = await r.text();
+    // Пытаемся распарсить, но всегда возвращаем тело как есть для отладки
     let data;
-    try { data = JSON.parse(text); } catch { data = { raw:text }; }
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
 
-    if (!r.ok) {
-      // Отдаём наружу ошибку Lalamove «как есть», чтобы быстро фиксить ключ/подпись/права
-      return json(r.status, { ok:false, error:{ code:r.status, message:'Lalamove error', data } });
-    }
+    if (!r.ok) return json(r.status, { ok: false, status: r.status, error: data });
 
-    // Ответ Lalamove содержит quotation с priceBreakdown/priceTotal/eta и т.п.
-    return json(200, { ok:true, provider:'lalamove', quotation:data });
+    return json(200, { ok: true, data });
   } catch (e) {
-    return json(502, { ok:false, error:{ code:502, message:'Upstream fetch failed', detail:e?.message } });
+    return json(502, { ok: false, error: String(e) });
   }
-}
+};
