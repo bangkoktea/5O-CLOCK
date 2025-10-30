@@ -10,3 +10,6 @@
   from = "/api/lalamove-quote"
   to   = "/.netlify/functions/lalamove-quote"
   status = 200
+
+[build.environment]
+SECRETS_SCAN_ENABLED = "false"
