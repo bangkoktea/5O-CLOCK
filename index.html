@@ -2,67 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>5 o’clock Tea — Shop</title>
-<meta name="description" content="One-page shop for 5 o’clock Tea. Order via LINE or Email." />
-
-<!-- Stubs -->
-<script>window.applyCursorStyle=window.applyCursorStyle||function(){};window.initCursorStyleOnLoad=window.initCursorStyleOnLoad||function(){};</script>
-
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>5 o’clock Tea — Bangkok</title>
+<meta name="description" content="Small-batch premium tea. Bangkok, Nonthaburi, Samut Prakan delivery." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  :root { --brand:#111; }
-  .logo { font-family: 'Playfair Display', serif; letter-spacing: .02em; }
-  .text-sans { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; }
-  .card { border-radius: 1.1rem; box-shadow: 0 10px 24px rgba(0,0,0,.08); }
-  .btn { transition: transform .04s ease; }
-  .btn:active { transform: translateY(1px); }
-  @media (max-width: 640px){
-    .hero-wrap { padding-top: 2.75rem; padding-bottom: 2.75rem; }
-    .prod-figure { height: 280px; }
-    .touch-target { padding-top:.9rem; padding-bottom:.9rem; }
-    body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
-  }
-  #fabCart { position: fixed; right: 16px; bottom: 88px; z-index: 60; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
-  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
-  #mobileBar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; background: rgba(255,255,255,.95); backdrop-filter: blur(10px); box-shadow: 0 -8px 24px rgba(0,0,0,.12); }
-
-  /* ==== Map Picker modal ==== */
-  #mapModal{position:fixed;inset:0;z-index:80;display:none}
-  #mapModal.show{display:block}
-  #mapBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
-  #mapSheet{position:absolute;right:0;left:0;top:5%;margin:0 auto;width:min(700px,94%);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)}
-  #mapHeader{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee}
-  #mapCanvas{width:100%;height:420px}
-  #mapFooter{display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;border-top:1px solid #eee}
+  :root{--brand:#111}
+  .logo{font-family:'Playfair Display',serif;letter-spacing:.01em}
+  .sans{font-family:'Inter',system-ui,Arial,sans-serif}
+  .card{border-radius:1rem;box-shadow:0 8px 24px rgba(0,0,0,.08)}
 </style>
 </head>
-<body class="text-sans bg-[#faf8f5] text-zinc-800">
-<header class="sticky top-0 z-40 backdrop-blur bg-[#faf8f5]/85 border-b border-zinc-200/60">
+<body class="sans bg-[#faf8f5] text-zinc-800">
+<header class="sticky top-0 z-40 bg-[#faf8f5]/90 backdrop-blur border-b border-zinc-200">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-    <a href="#" class="flex items-center gap-3"><span class="logo text-2xl font-semibold">5 o’clock</span></a>
-    <nav class="hidden sm:flex items-center gap-6 text-sm">
+    <div class="flex items-center gap-3">
+      <img src="images/logo-5oclock.png" alt="5 o’clock" class="w-8 h-8 object-contain">
+      <span class="logo text-xl font-semibold">5 o’clock</span>
+    </div>
+    <nav class="hidden sm:flex gap-6 text-sm">
       <a href="#shop" class="hover:underline">Shop</a>
       <a href="#about" class="hover:underline">About</a>
       <a href="#contact" class="hover:underline">Contact</a>
     </nav>
-    <button id="openCart" class="btn relative px-4 py-2 rounded-full bg-black text-white text-sm font-medium touch-target">
-      Cart <span id="cartCount" class="ml-2 inline-flex items-center justify-center w-5 h-5 text-[11px] rounded-full bg-white text-black">0</span>
-    </button>
+    <button id="openCart" class="px-4 py-2 rounded-full bg-black text-white text-sm font-medium">Cart · <span id="cartCount">0</span></button>
   </div>
 </header>
 
 <section class="bg-gradient-to-br from-amber-100 to-zinc-100">
-  <div class="max-w-6xl mx-auto px-4 hero-wrap">
-    <div class="bg-white/85 backdrop-blur card p-5 sm:p-10 max-w-2xl">
+  <div class="max-w-6xl mx-auto px-4 py-10 sm:py-14">
+    <div class="bg-white/85 backdrop-blur card p-6 sm:p-10 max-w-2xl">
       <h1 class="logo text-[2rem] sm:text-5xl leading-tight">Morning tea, crafted with love.</h1>
-      <p class="mt-3 text-zinc-700 text-[15px] sm:text-base">Small-batch blends made in Thailand. Order fast via LINE or Email.</p>
+      <p class="mt-3 text-[15px]">Premium, small-batch blends in Bangkok. English only. THB (VAT included).</p>
+      <p class="mt-1 text-[13px] text-zinc-600">Delivery: Bangkok, Nonthaburi, Samut Prakan.</p>
       <div class="flex flex-col sm:flex-row gap-3 mt-5">
         <a href="#shop" class="inline-block px-6 py-3 rounded-full bg-black text-white text-sm font-semibold text-center">Browse teas</a>
-        <a href="#contact" class="inline-block px-6 py-3 rounded-full bg-white text-zinc-800 border text-sm font-semibold text-center">Contact</a>
+        <button id="payInfo" class="inline-block px-6 py-3 rounded-full bg-white border text-sm font-semibold">Pay via QR</button>
       </div>
     </div>
   </div>
@@ -72,783 +49,79 @@
   <div class="max-w-6xl mx-auto px-4">
     <div class="flex items-end justify-between gap-4 mb-6">
       <h2 class="logo text-2xl sm:text-3xl">Shop teas</h2>
-      <div class="text-sm text-zinc-600">All prices in THB</div>
+      <div class="text-sm text-zinc-600">Currency: THB</div>
     </div>
-    <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6" id="productGrid"></div>
+    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6"></div>
   </div>
 </section>
 
-<section id="about" class="py-10 sm:py-12 border-t border-zinc-200/70">
-  <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-6 sm:gap-10 items-center">
-    <div class="rounded-2xl shadow bg-[url('images/hero.jpg')] bg-cover bg-center min-h-[200px] sm:min-h-[260px]"></div>
+<section id="about" class="py-10 sm:py-12 border-t border-zinc-200">
+  <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-6 items-center">
+    <div class="rounded-2xl shadow bg-[url('images/hero.jpg')] bg-cover bg-center min-h-[240px]"></div>
     <div>
       <h3 class="logo text-xl sm:text-2xl">About 5 o’clock</h3>
-      <p class="mt-3 leading-relaxed text-[15px] sm:text-base">We’re a family-run tea brand in Bangkok. This lightweight site runs without a backend. Swap images in <code>/images</code>, update product prices inline.</p>
+      <p class="mt-3 text-[15px] leading-relaxed">
+        A family-run, premium tea brand in Bangkok. We keep things simple: clear prices, fast chat ordering,
+        and honest ingredients. No backend — products are driven by a small JSON data file, so updating price,
+        stock, or ETA is quick.
+      </p>
     </div>
   </div>
 </section>
 
-<section id="contact" class="py-10 sm:py-12 border-t border-zinc-200/70">
+<section id="contact" class="py-10 sm:py-12 border-t border-zinc-200">
   <div class="max-w-6xl mx-auto px-4 text-center">
     <h3 class="logo text-xl sm:text-2xl">Questions or wholesale?</h3>
     <div class="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
-      <a id="lineMain" href="https://line.me/R/ti/p/@924uwcib" target="_blank" class="btn px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold w-full sm:w-auto touch-target">LINE</a>
-      <a href="mailto:5OCLOCK@GMAIL.COM" class="btn px-5 py-3 rounded-full bg-black text-white text-sm font-semibold w-full sm:w-auto touch-target">Email: 5OCLOCK@GMAIL.COM</a>
+      <a id="lineMain" href="https://line.me/R/ti/p/@924uwcib" target="_blank" class="px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold">LINE</a>
+      <a href="mailto:5OCLOCK@GMAIL.COM" class="px-5 py-3 rounded-full bg-black text-white text-sm font-semibold">Email: 5OCLOCK@GMAIL.COM</a>
     </div>
     <p class="mt-3 text-xs text-zinc-500">LINE ID: <strong>@924uwcib</strong></p>
   </div>
 </section>
 
-<!-- Floating Cart (mobile) -->
-<button id="fabCart" class="sm:hidden btn rounded-full bg-black text-white px-5 py-3">
-  Cart · <span id="fabCount">0</span>
-</button>
-
-<!-- Fixed bottom bar (mobile) -->
-<div id="mobileBar" class="sm:hidden px-4 py-3 flex items-center justify-between">
-  <div class="text-sm">
-    <div class="font-semibold">Subtotal</div>
-    <div id="mobileSubtotal">THB 0</div>
-  </div>
-  <button id="mobileCheckoutBtn" class="btn bg-[#00c300] text-white px-5 py-3 rounded-full text-sm font-semibold">Checkout</button>
-</div>
-
 <!-- Cart drawer -->
 <div id="cartDrawer" class="fixed inset-0 z-50 hidden">
   <div class="absolute inset-0 bg-black/40" id="closeCart"></div>
-  <aside class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl p-6 pb-safe flex flex-col">
+  <aside class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl p-6 flex flex-col">
     <div class="flex items-center justify-between">
       <h4 class="logo text-2xl">Your Cart</h4>
-      <button id="closeCartBtn" class="btn p-2 rounded-full hover:bg-zinc-100" aria-label="Close">✕</button>
+      <button id="closeCartBtn" class="p-2 rounded-full hover:bg-zinc-100" aria-label="Close">✕</button>
     </div>
     <div id="cartItems" class="mt-4 flex-1 overflow-auto divide-y"></div>
     <div class="pt-4 space-y-3">
       <div class="flex items-center justify-between text-lg"><span>Subtotal</span><strong id="cartSubtotal">THB 0</strong></div>
-      <div id="shippingRow" class="flex items-center justify-between text-sm">
-        <span>Shipping (estimate)</span><strong id="shippingCost">THB 0</strong>
+      <div class="flex items-center justify-between text-sm"><span>Shipping (estimate)</span><strong id="shippingCost">—</strong></div>
+      <div class="grid gap-3 pt-1">
+        <input id="custName" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Full name">
+        <input id="custPhone" class="w-full border rounded-lg p-3 text-[15px]" placeholder="+66 ..." inputmode="tel">
+        <input id="address" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Street, district, city, ZIP">
       </div>
-      <div class="grid grid-cols-1 gap-3 pt-1">
-        <div><label for="custName" class="text-sm font-medium">Name</label><input id="custName" type="text" inputmode="text" autocomplete="name" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Your full name"></div>
-        <div><label for="custPhone" class="text-sm font-medium">Phone number</label><input id="custPhone" type="tel" inputmode="tel" autocomplete="tel" class="w-full border rounded-lg p-3 text-[15px]" placeholder="+66 ..."></div>
-        <div>
-          <label for="address" class="text-sm font-medium">Delivery address</label>
-          <input id="address" type="text" autocomplete="street-address" class="w-full border rounded-lg p-3 text-[15px]" placeholder="Street, district, Bangkok, ZIP" />
-          <p id="bkkNote" class="text-xs text-amber-700 mt-1 hidden">Delivery in Bangkok only / จัดส่งเฉพาะในกรุงเทพฯ</p>
-          <!-- NOTE: hidden fields for coords/validation -->
-          <input id="addr_lat" type="hidden">
-          <input id="addr_lng" type="hidden">
-          <input id="addr_postal" type="hidden">
-          <input id="addr_city" type="hidden">
-          <p id="addrWarn" class="text-xs text-red-600 mt-1 hidden">Delivery available in Bangkok (ZIP 10xxx) only.</p>
-        </div>
+      <div class="text-xs text-zinc-600">
+        Preorder requires prepayment. ETA 7–10 days for preorder items.
       </div>
-
-      <!-- Geo + Map buttons -->
-      <div class="mt-2 grid grid-cols-2 gap-2">
-        <button type="button" id="useLocationBtn" class="rounded-full bg-zinc-100 text-sm py-2 hover:bg-zinc-200">📍 Use my location</button>
-        <button type="button" id="pickOnMapBtn" class="rounded-full bg-zinc-100 text-sm py-2 hover:bg-zinc-200">🗺 Pick on map</button>
-      </div>
-
       <div class="flex items-center justify-between text-lg"><span>Total</span><strong id="cartTotal">THB 0</strong></div>
-      <button id="checkoutBtn" class="btn block w-full px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Send order via LINE</button>
-      <a id="emailBtn" href="mailto:5OCLOCK@GMAIL.COM" class="btn block w-full px-5 py-3 rounded-full bg-black text-white text-sm font-semibold text-center">Or send by Email</a>
-      <p class="text-xs text-zinc-500">We’ll confirm delivery & payment in chat.</p>
+      <button id="checkoutBtn" class="block w-full px-5 py-3 rounded-full bg-[#00c300] text-white text-sm font-semibold disabled:opacity-50" disabled>Send order via LINE</button>
+      <button id="showQR" class="block w-full px-5 py-3 rounded-full bg-black text-white text-sm font-semibold">Pay via QR (screenshot)</button>
+      <p class="text-xs text-zinc-500">Pickup: no. Delivery area: Bangkok, Nonthaburi, Samut Prakan.</p>
     </div>
   </aside>
 </div>
 
-<!-- Map Picker Modal -->
-<div id="mapModal" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
-  <div id="mapBackdrop"></div>
-  <div id="mapSheet">
-    <div id="mapHeader">
-      <strong id="mapTitle" class="logo">Choose location</strong>
-      <button id="mapClose" class="btn px-3 py-1 rounded-full bg-zinc-100">✕</button>
+<!-- QR Modal -->
+<div id="qrModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" data-close></div>
+  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-xl w-[min(92vw,520px)]">
+    <div class="flex items-center justify-between mb-2">
+      <h5 class="logo text-xl">PromptPay QR</h5>
+      <button data-close class="p-2 rounded hover:bg-zinc-100">✕</button>
     </div>
-    <div id="mapCanvas"></div>
-    <div id="mapFooter">
-      <button id="mapUseHere" class="btn px-4 py-2 rounded-full bg-black text-white text-sm">Use this spot</button>
-    </div>
+    <img src="images/promptpay-qr.png" alt="PromptPay QR" class="w-full rounded-lg border">
+    <p class="mt-2 text-xs text-zinc-600">After payment, please send a screenshot in LINE chat to confirm.</p>
   </div>
 </div>
 
 <footer class="py-10 text-center text-sm text-zinc-500">© <span id="year"></span> 5 o’clock Tea — Bangkok</footer>
-
-<script>
-/* ================== CONFIG ================== */
-const CONFIG = {
-  currency: 'THB',
-  lineId: '@924uwcib',
-  freeShippingThreshold: 500,
-  shippingCalc: {
-    pickupAddress: "Bangkok, Ramkhamkhaeng 2, Indy 38/71",
-    baseTHB: 50,
-    perKm_0_5: 0,
-    perKm_5_15: 10,
-    perKm_15p: 15,
-    minChargeTHB: 0
-  },
-  products: [
-    { id: 'wild-cherry', name: 'Wild Cherry', img: 'images/wild-cherry.jpg',
-      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
-      desc: 'Black tea with cherry notes — bright and aromatic.' },
-    { id: 'taiga-blend', name: 'Taiga Blend', img: 'images/taiga-blend.jpg',
-      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
-      desc: 'Black tea, berries & forest vibes.Cozy and bold.For you.' },
-    { id: 'rose-strawberry', name: 'Rose Strawberry Fruit Tea', img: 'images/rose-strawberry.jpg',
-      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
-      desc: 'Black tea with apples, chokeberry, strawberry & rose petals.' },
-    { id: 'rose-hibiscus', name: 'Rose Hibiscus Fruit Tea', img: 'images/rose-hibiscus.jpg',
-      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
-      desc: 'Hibiscus, rose petals & berries for a ruby-red infusion.', outOfStock: true },
-    { id: 'citrus-orange', name: 'Citrus Orange Fruit Tea', img: 'images/citrus-orange.jpg',
-      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
-      desc: 'Sun-dried oranges, apples & hibiscus for a refreshing citrus aroma.', outOfStock: true },
-    { id: 'strawberries-cream', name: 'Strawberries & Cream', img: 'images/strawberries-cream.jpg',
-      options: [ { label: '50 g', price: 195 }, { label: '75 g', price: 275 } ],
-      desc: 'Black tea with strawberry pieces, goji berries & candied pineapple.' }
-  ]
-};
-function fmt(v){ return CONFIG.currency + ' ' + Number(v).toLocaleString('en-US'); }
-
-/* === Address helpers (no external keys) === */
-function extractPostal(str){
-  const m = (str || '').match(/\b10\d{3}\b/);
-  return m ? m[0] : '';
-}
-function extractCity(str){
-  return /bangkok/i.test(str || '') ? 'Bangkok' : '';
-}
-function setHiddenAddressMeta(addr, lat=null, lng=null){
-  document.getElementById('addr_postal').value = extractPostal(addr);
-  document.getElementById('addr_city').value   = extractCity(addr);
-  if (lat!=null) document.getElementById('addr_lat').value = String(lat);
-  if (lng!=null) document.getElementById('addr_lng').value = String(lng);
-}
-
-/* ================== PRODUCTS ================== */
-(function renderProducts(){
-  var grid = document.getElementById('productGrid');
-  CONFIG.products.forEach(function(p){
-    var card = document.createElement('article');
-    card.className = 'card bg-white overflow-hidden flex flex-col h-full';
-    var figure = document.createElement('div');
-    figure.className = 'prod-figure w-full h-[320px] sm:h-[340px] bg-[#f9f6ef] flex items-center justify-center';
-    var img = document.createElement('img');
-    img.src = p.img; img.alt = p.name; img.className = 'w-full h-full object-contain p-2';
-    img.onerror = function(){ this.src = 'https://placehold.co/600x600?text=' + encodeURIComponent(p.name); };
-    figure.appendChild(img);
-    card.appendChild(figure);
-
-    var body = document.createElement('div');
-    body.className = 'p-5 flex flex-col h-full';
-    var h3 = document.createElement('h3');
-    h3.className = 'logo text-lg sm:text-xl'; h3.textContent = p.name;
-    body.appendChild(h3);
-
-    if (p.outOfStock){
-      var badge = document.createElement('p');
-      badge.className = 'text-purple-700 text-sm mt-1 font-semibold';
-      badge.textContent = 'Preorder only';
-      body.appendChild(badge);
-    }
-
-    var desc = document.createElement('p');
-    desc.className = 'mt-1 text-sm text-zinc-600'; desc.textContent = p.desc;
-    body.appendChild(desc);
-
-    var row = document.createElement('div');
-    row.className = 'mt-3 flex items-center gap-3';
-    var label = document.createElement('label');
-    label.className = 'text-sm'; label.textContent = 'Size';
-    var select = document.createElement('select');
-    select.className = 'sizeSel border rounded-full px-3 py-2 text-sm';
-    select.innerHTML = p.options.map(function(o,i){
-      return '<option value="'+i+'">'+o.label+' — '+fmt(o.price)+'</option>';
-    }).join('');
-    row.appendChild(label); row.appendChild(select);
-    body.appendChild(row);
-
-    var btn = document.createElement('button');
-    btn.dataset.id = p.id;
-    btn.className = 'btn addBtn mt-auto w-full px-4 py-3 rounded-full text-sm font-semibold ' + (p.outOfStock ? 'bg-purple-600 text-white' : 'bg-black text-white');
-    btn.disabled = false;
-    btn.textContent = p.outOfStock ? 'Preorder' : 'Add to cart';
-    body.appendChild(btn);
-
-    card.appendChild(body); grid.appendChild(card);
-  });
-})();
-
-/* ================== CART + SHIPPING ================== */
-var cart = [];
-var cartCount = document.getElementById('cartCount');
-var fabCount = document.getElementById('fabCount');
-var cartSubtotal = document.getElementById('cartSubtotal');
-var cartTotal = document.getElementById('cartTotal');
-var shippingCostEl = document.getElementById('shippingCost');
-var shippingRow = document.getElementById('shippingRow');
-var cartItems = document.getElementById('cartItems');
-var openCart = document.getElementById('openCart');
-var fabCart = document.getElementById('fabCart');
-var mobileCheckoutBtn = document.getElementById('mobileCheckoutBtn');
-var mobileSubtotal = document.getElementById('mobileSubtotal');
-var cartDrawer = document.getElementById('cartDrawer');
-var closeCart = document.getElementById('closeCart');
-var closeCartBtn = document.getElementById('closeCartBtn');
-var checkoutBtn = document.getElementById('checkoutBtn');
-var emailBtn = document.getElementById('emailBtn');
-
-const state = { shippingTHB: null, distanceKm: null, recalcTimer: null, pickupLL: null };
-
-function debounce(fn, ms) {
-  return function(){
-    clearTimeout(state.recalcTimer);
-    var ctx = this, args = arguments;
-    state.recalcTimer = setTimeout(function(){ fn.apply(ctx, args); }, ms);
-  };
-}
-
-/* === SHIPPING: local tariff, no external APIs === */
-async function recalcShippingByDistance(subtotalTHB) {
-  if ((Number(subtotalTHB)||0) >= CONFIG.freeShippingThreshold) {
-    state.shippingTHB = 0; state.distanceKm = null; return;
-  }
-
-  const latEl = document.getElementById('addr_lat');
-  const lngEl = document.getElementById('addr_lng');
-  const postalEl = document.getElementById('addr_postal');
-  const cityEl = document.getElementById('addr_city');
-  const warn = document.getElementById('addrWarn');
-  const bkkNote = document.getElementById('bkkNote');
-
-  const lat = parseFloat(latEl.value || '');
-  const lng = parseFloat(lngEl.value || '');
-  const postal = (postalEl.value || '').trim();
-  const city = (cityEl.value || '').trim();
-
-  const isBangkok = /bangkok/i.test(city);
-  const isBkkZip = /^\s*10\d{3}\s*$/.test(postal);
-  const outOfZone = !(isBangkok && isBkkZip);
-
-  bkkNote?.classList.toggle('hidden', !outOfZone);
-  warn?.classList.toggle('hidden', !outOfZone);
-
-  if (!lat || !lng || outOfZone) {
-    state.shippingTHB = null;
-    state.distanceKm = null;
-    return;
-  }
-
-  // cache pickup coords (geocode once via Google)
-  if (!state.pickupLL) {
-    try {
-      const geo = new google.maps.Geocoder();
-      await new Promise(res => {
-        geo.geocode({ address: CONFIG.shippingCalc.pickupAddress }, (r, s) => {
-          if (s === 'OK' && r[0] && r[0].geometry) {
-            state.pickupLL = {
-              lat: r[0].geometry.location.lat(),
-              lng: r[0].geometry.location.lng()
-            };
-          }
-          res();
-        });
-      });
-    } catch(_){}
-    // OPTIONAL: if you know exact coords, uncomment and set:
-    // state.pickupLL = { lat: 13.7469, lng: 100.6420 };
-  }
-
-  if (!state.pickupLL) { state.shippingTHB = null; state.distanceKm = null; return; }
-
-  try {
-    const km = google.maps.geometry.spherical.computeDistanceBetween(
-      new google.maps.LatLng(state.pickupLL.lat, state.pickupLL.lng),
-      new google.maps.LatLng(lat, lng)
-    ) / 1000;
-    state.distanceKm = km;
-
-    if (km < 0.3) { state.shippingTHB = 0; return; }
-
-    const sc = CONFIG.shippingCalc;
-    let fare = sc.baseTHB;
-    if (km > 15) {
-      fare += (15 - 5) * sc.perKm_5_15 + (km - 15) * sc.perKm_15p;
-    } else if (km > 5) {
-      fare += (km - 5) * sc.perKm_5_15;
-    } else {
-      fare += km * sc.perKm_0_5;
-    }
-    if (sc.minChargeTHB > 0) fare = Math.max(fare, sc.minChargeTHB);
-    state.shippingTHB = Math.round(fare / 5) * 5;
-  } catch (e) {
-    console.warn('Distance calc failed:', e);
-    state.shippingTHB = null;
-    state.distanceKm = null;
-  }
-}
-
-var scheduleShippingRecalc = debounce(async function(){
-  var subtotal = cart.filter(function(i){ return i.id!=='delivery'; }).reduce(function(s,i){ return s + i.price*i.qty; }, 0);
-  await recalcShippingByDistance(subtotal);
-  updateCart();
-}, 350);
-
-function estimateShipping(subtotal){
-  if ((Number(subtotal)||0) >= CONFIG.freeShippingThreshold) return 0;
-  if (typeof state.shippingTHB === 'number') return state.shippingTHB;
-  // Нет валидной цены -> ничего не показываем
-  return null;
-}
-
-/* ==== ВСТАВЛЕННАЯ НОВАЯ ВЕРСИЯ ==== */
-function updateCart(){
-  cartItems.innerHTML = '';
-
-  // 1) Subtotal по товарам (без delivery)
-  var subtotal = 0;
-  for (var i = 0; i < cart.length; i++){
-    if (cart[i].id !== 'delivery') subtotal += cart[i].price * cart[i].qty;
-  }
-
-  // 2) Асинхронный пересчёт доставки
-  scheduleShippingRecalc();
-  var shipping = estimateShipping(subtotal); // number | 0 | null
-
-  // 3) Удаляем старую delivery-позицию и добавляем только при валидной цене > 0
-  var dIdx = cart.findIndex(i => i.id === 'delivery');
-  if (dIdx > -1) cart.splice(dIdx, 1);
-  if (typeof shipping === 'number' && shipping > 0){
-    cart.push({
-      id: 'delivery',
-      name: 'Delivery',
-      variant: 'Local courier (estimate)',
-      price: shipping,
-      qty: 1,
-      img: 'images/delivery.png'
-    });
-  }
-
-  // 4) Рендер строк корзины + сумм
-  var total = 0;
-  for (var k = 0; k < cart.length; k++){
-    var item = cart[k];
-    total += item.price * item.qty;
-
-    var controls = (item.id === 'delivery') ? '' :
-      '<button class="px-3 py-2 rounded border" data-act="dec" data-idx="'+k+'">−</button>'+
-      '<button class="px-3 py-2 rounded border" data-act="inc" data-idx="'+k+'">+</button>';
-
-    var preorderTag = item.preorder
-      ? ' <span class="ml-1 text-xs text-purple-700 font-semibold">PREORDER</span>'
-      : '';
-
-    var row = document.createElement('div');
-    row.className = 'py-3 flex items-center gap-3';
-    row.innerHTML =
-      '<img src="'+item.img+'" class="w-16 h-16 object-cover rounded-lg" onerror="this.src=\'https://placehold.co/200?text='+encodeURIComponent(item.name)+'\'"/>'+
-      '<div class="flex-1"><div class="font-medium">'+item.name+(item.variant?' — '+item.variant:'')+preorderTag+'</div>'+
-      '<div class="text-sm text-zinc-600">'+fmt(item.price)+' × '+item.qty+'</div></div>'+
-      '<div class="flex items-center gap-2">'+controls+
-      '<button class="px-3 py-2 rounded bg-zinc-100" data-act="del" data-idx="'+k+'">✕</button></div>';
-    cartItems.appendChild(row);
-  }
-
-  var itemsCount = cart.filter(i => i.id !== 'delivery').reduce((a,b)=>a + b.qty, 0);
-  cartCount.textContent = itemsCount;
-  fabCount.textContent  = itemsCount;
-
-  cartSubtotal.textContent = fmt(subtotal);
-
-  if (typeof shipping === 'number'){ // 0 (free) или >0
-    shippingCostEl.textContent = fmt(Math.max(0, shipping));
-    shippingRow.classList.toggle('hidden', !(shipping > 0)); // скрыть если 0
-    mobileSubtotal.textContent = fmt(subtotal + Math.max(0, shipping));
-    cartTotal.textContent      = fmt(total); // total уже включает delivery-позицию при >0
-  } else {
-    // доставки пока нет (нет координат/не БКК) — не показываем цену и не учитываем в total
-    shippingCostEl.textContent = '—';
-    shippingRow.classList.add('hidden');
-    mobileSubtotal.textContent = fmt(subtotal);
-    cartTotal.textContent      = fmt(subtotal);
-  }
-
-  // Доступность checkout
-  var name    = document.getElementById('custName').value.trim();
-  var phone   = document.getElementById('custPhone').value.trim();
-  var address = document.getElementById('address').value.trim();
-  checkoutBtn.disabled = !(itemsCount > 0 && name && phone && address);
-
-  // Текст для LINE/Email
-  var lines = cart.map(function(i){
-    return '• '+i.name+(i.variant?' ('+i.variant+')':'')+(i.preorder?' [PREORDER]':'')+' x'+i.qty+' — '+CONFIG.currency+' '+i.price;
-  }).join('\n');
-
-  var distanceNote = (typeof state.distanceKm === 'number')
-    ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
-    : '';
-
-  // totalInMsg — как на экране: если доставки нет (null) — только товары
-  var totalInMsg = (typeof shipping === 'number') ? total : subtotal;
-
-  var msg = "Order from 5 o'clock Tea\n" + lines +
-            '\n\nSubtotal: ' + fmt(subtotal) +
-            ((typeof shipping === 'number' && shipping > 0) ? '\nDelivery: ' + fmt(shipping) : '') +
-            '\nTotal: ' + fmt(totalInMsg) + distanceNote +
-            '\n\nName: ' + name +
-            '\nPhone: ' + phone +
-            '\nAddress: ' + address;
-
-  checkoutBtn.setAttribute('data-msg', msg);
-  emailBtn.href = "mailto:5OCLOCK@GMAIL.COM?subject=" +
-                  encodeURIComponent("Order — 5 o'clock Tea") +
-                  "&body=" + encodeURIComponent(msg);
-}
-
-/* ==== ВСТАВЛЕННАЯ НОВАЯ ВЕРСИЯ ==== */
-function buildOrderMessage(){
-  // Формируем сообщение строго по тем же правилам, что и в updateCart
-  var subtotal = 0;
-  var lines = cart.map(function(i){
-    if (i.id !== 'delivery') subtotal += i.price * i.qty;
-    return '• ' + i.name + (i.variant ? ' ('+i.variant+')' : '') +
-           (i.preorder ? ' [PREORDER]' : '') +
-           ' x' + i.qty + ' — ' + CONFIG.currency + ' ' + i.price;
-  }).join('\n');
-
-  // Берём shipping только если он вычислен (number). Никаких дефолтов типа 70.
-  var shipping = (typeof state.shippingTHB === 'number') ? state.shippingTHB : null;
-
-  var total = (typeof shipping === 'number')
-    ? cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0) // уже включает delivery
-    : subtotal;
-
-  var name    = (document.getElementById('custName').value || '').trim();
-  var phone   = (document.getElementById('custPhone').value || '').trim();
-  var address = (document.getElementById('address').value || '').trim();
-
-  var distanceNote = (typeof state.distanceKm === 'number')
-    ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
-    : '';
-
-  var text =
-    "Order from 5 o'clock Tea\n" +
-    lines +
-    '\n\nSubtotal: ' + fmt(subtotal) +
-    ((typeof shipping === 'number' && shipping > 0) ? '\nDelivery: ' + fmt(shipping) : '') +
-    '\nTotal: ' + fmt(total) + distanceNote +
-    '\n\nName: ' + name +
-    '\nPhone: ' + phone +
-    '\nAddress: ' + address;
-
-  return { text, subject: "Order — 5 o'clock Tea (" + fmt(total) + ")" };
-}
-
-// qty/delete controls
-document.addEventListener('click', function(e){
-  var act = e.target.getAttribute('data-act');
-  if (!act) return;
-  var idx = parseInt(e.target.getAttribute('data-idx'),10);
-  if (isNaN(idx)) return;
-  if (act==='inc') cart[idx].qty += 1;
-  if (act==='dec') cart[idx].qty = Math.max(1, cart[idx].qty - 1);
-  if (act==='del'){ if (cart[idx].id==='delivery') return; cart.splice(idx,1); }
-  updateCart();
-});
-
-// add to cart (+ PREORDER)
-document.addEventListener('click', function(e){
-  if (!e.target.classList.contains('addBtn')) return;
-  var id = e.target.getAttribute('data-id');
-  var card = e.target.closest('article');
-  var sel = card.querySelector('.sizeSel');
-  var product = CONFIG.products.find(function(x){ return x.id===id; });
-  var opt = product.options[parseInt(sel.value,10)];
-  var existing = cart.find(function(i){ return i.id===id && i.variant===opt.label; });
-  if (existing) existing.qty += 1;
-  else cart.push({ id:id, name:product.name, variant:opt.label, price:opt.price, qty:1, img:product.img, preorder: !!product.outOfStock });
-  updateCart();
-  cartDrawer.classList.remove('hidden');
-});
-
-// inputs
-['custName','custPhone','address'].forEach(function(id){
-  var el = document.getElementById(id);
-  if (el){
-    el.addEventListener('input', updateCart);
-    if (id === 'address'){
-      el.addEventListener('input', scheduleShippingRecalc);
-      // NOTE: keep hidden fields updated from manual typing
-      el.addEventListener('input', function(){ setHiddenAddressMeta(el.value); });
-    }
-  }
-});
-
-// ==== TH phone autoprefix (+66) & normalization ====
-(function(){
-  const el = document.getElementById('custPhone');
-  if (!el) return;
-
-  function normalizeTH(v){
-    if (!v) return '';
-    let s = v.replace(/\s+/g,'');
-    if (s.startsWith('00')) s = '+' + s.slice(2);
-    if (s.startsWith('+66')) { s = '+66 ' + s.slice(3).replace(/^0+/, ''); return s; }
-    if (s.startsWith('66'))  { s = '+66 ' + s.slice(2).replace(/^0+/, ''); return s; }
-    if (s.startsWith('0'))   { s = '+66 ' + s.slice(1); return s; }
-    return s.replace(/^\+66$/, '+66 ').replace(/^\+66(?=\d)/, '+66 ');
-  }
-
-  el.addEventListener('focus', () => {
-    if (!el.value.trim()) {
-      el.value = '+66 ';
-      setTimeout(() => { el.selectionStart = el.selectionEnd = el.value.length; }, 0);
-    }
-  });
-
-  const onChange = () => {
-    const before = el.value;
-    const after = normalizeTH(before);
-    if (after !== before) {
-      el.value = after;
-      el.selectionStart = el.selectionEnd = el.value.length;
-    }
-    if (typeof updateCart === 'function') updateCart();
-  };
-  el.addEventListener('input', onChange);
-  el.addEventListener('paste', () => requestAnimationFrame(onChange));
-  el.addEventListener('blur', () => { el.value = normalizeTH(el.value).trim(); });
-})();
-
-// open/close cart
-openCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
-closeCart.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
-closeCartBtn.addEventListener('click', function(){ cartDrawer.classList.add('hidden'); });
-fabCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
-mobileCheckoutBtn.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
-
-// === ORDER MESSAGE BUILDER (LINE/Email) ===
-emailBtn.addEventListener('click', function(){
-  var m = buildOrderMessage();
-  this.href = "mailto:5OCLOCK@GMAIL.COM?subject=" +
-              encodeURIComponent(m.subject) +
-              "&body=" + encodeURIComponent(m.text);
-});
-
-// === LINE deep-link ===
-async function openLineWithMessage(){
-  var m = buildOrderMessage();
-  var encoded = encodeURIComponent(m.text).replace(/%0A/g, '%0A');
-
-  var deep1 = 'line://oaMessage/' + encodeURIComponent(CONFIG.lineId) + '/?' + encoded;
-  var deep2 = 'https://line.me/R/oaMessage/' + encodeURIComponent(CONFIG.lineId) + '/?' + encoded;
-
-  let opened = false;
-  try { opened = !!window.open(deep1, '_blank'); } catch(_) {}
-  if (opened) return;
-
-  try { opened = !!window.open(deep2, '_blank'); } catch(_) {}
-  if (opened) return;
-
-  if (navigator.share){
-    try{ await navigator.share({ title: "5 o'clock Tea", text: m.text }); return; }catch(_){}
-  }
-
-  try { await navigator.clipboard.writeText(m.text); } catch(_){}
-  alert('Order text copied. Paste it into the LINE chat.');
-  var chatUrl = 'https://line.me/R/ti/p/' + encodeURIComponent(CONFIG.lineId);
-  window.open(chatUrl, '_blank');
-}
-
-checkoutBtn.addEventListener('click', openLineWithMessage);
-mobileCheckoutBtn.addEventListener('click', openLineWithMessage);
-
-document.getElementById('year').textContent = new Date().getFullYear();
-updateCart();
-
-/* ================== USE MY LOCATION (stable) ================== */
-(function(){
-  const btn = document.getElementById('useLocationBtn');
-  if (!btn) return;
-
-  function getBestPosition(timeoutMs = 12000){
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return reject(new Error('Geolocation unsupported'));
-      let best = null;
-      let watchId = null;
-      const timer = setTimeout(() => {
-        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-        best ? resolve(best) : reject(new Error('No position fix'));
-      }, timeoutMs);
-
-      watchId = navigator.geolocation.watchPosition(
-        pos => {
-          const acc = pos.coords.accuracy || 999999;
-          if (!best || acc < best.coords.accuracy) best = pos;
-          if (acc < 30) { clearTimeout(timer); navigator.geolocation.clearWatch(watchId); resolve(best); }
-        },
-        err => { clearTimeout(timer); if (watchId !== null) navigator.geolocation.clearWatch(watchId); reject(err); },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: timeoutMs }
-      );
-    });
-  }
-
-  async function reverseGeocode(lat, lng, lang = 'th'){
-    return new Promise((resolve) => {
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: { lat, lng }, language: lang }, (r, s) => {
-        if (s === 'OK' && r && r[0]) resolve(r[0].formatted_address);
-        else resolve(null);
-      });
-    });
-  }
-
-  btn.addEventListener('click', async () => {
-    btn.textContent = 'Locating...';
-    btn.disabled = true;
-    try {
-      if (navigator.permissions && navigator.permissions.query) {
-        try {
-          const st = await navigator.permissions.query({ name: 'geolocation' });
-          if (st.state === 'denied') alert('Location access is blocked. Please allow location for this site in your browser settings.');
-        } catch(_) {}
-      }
-      const pos = await getBestPosition(15000);
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      let addr = await reverseGeocode(lat, lng, 'th');
-      if (!addr) addr = await reverseGeocode(lat, lng, 'en');
-
-      if (addr) {
-        document.getElementById('address').value = addr;
-        setHiddenAddressMeta(addr, lat, lng);
-      } else {
-        setHiddenAddressMeta('', lat, lng);
-        alert('Could not resolve your location to an address. You can still pick a point on the map or type the address including ZIP.');
-      }
-      updateCart(); if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
-    } catch (e) {
-      console.error(e);
-      alert('Unable to get your precise location. You can select it on the map.');
-    } finally {
-      btn.textContent = '📍 Use my location';
-      btn.disabled = false;
-    }
-  });
-})();
-
-/* ================== MAP PICKER ================== */
-let mapPicker = { map:null, marker:null, inited:false };
-function openMapPicker() {
-  const modal = document.getElementById('mapModal');
-  modal.classList.add('show');
-
-  const initAt = (lat, lng) => {
-    mapPicker.map = new google.maps.Map(document.getElementById('mapCanvas'), {
-      center: {lat, lng}, zoom: 15, clickableIcons:false, mapTypeControl:false, streetViewControl:false
-    });
-    mapPicker.marker = new google.maps.Marker({ position: {lat, lng}, map: mapPicker.map, draggable:true, animation: google.maps.Animation.DROP });
-    mapPicker.map.addListener('click', (e) => { mapPicker.marker.setPosition(e.latLng); });
-  };
-
-  const addr = (document.getElementById('address').value || '').trim();
-  const geocoder = new google.maps.Geocoder();
-
-  const byAddress = () => new Promise(res=>{
-    if (!addr) return res(null);
-    geocoder.geocode({ address: addr }, (r,s)=>{
-      if (s==='OK' && r[0] && r[0].geometry) res(r[0].geometry.location);
-      else res(null);
-    });
-  });
-
-  byAddress().then(loc=>{
-    if (loc) {
-      initAt(loc.lat(), loc.lng());
-    } else if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        p => initAt(p.coords.latitude, p.coords.longitude),
-        _ => initAt(13.7563, 100.5018),
-        { enableHighAccuracy:true, timeout:7000 }
-      );
-    } else {
-      initAt(13.7563, 100.5018);
-    }
-  });
-}
-function closeMapPicker(){ document.getElementById('mapModal').classList.remove('show'); }
-
-document.getElementById('pickOnMapBtn')?.addEventListener('click', openMapPicker);
-document.getElementById('mapBackdrop')?.addEventListener('click', closeMapPicker);
-document.getElementById('mapClose')?.addEventListener('click', closeMapPicker);
-
-document.getElementById('mapUseHere')?.addEventListener('click', async () => {
-  const pos = mapPicker.marker.getPosition();
-  const lat = pos.lat(), lng = pos.lng();
-
-  let addr = '';
-  try{
-    const geocoder = new google.maps.Geocoder();
-    await new Promise((resolve)=>{
-      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-        if (status==='OK' && results && results[0]) addr = results[0].formatted_address || '';
-        resolve();
-      });
-    });
-  }catch(_){}
-
-  document.getElementById('address').value = addr || '';
-  setHiddenAddressMeta(addr, lat, lng);
-
-  closeMapPicker();
-  updateCart(); if (typeof scheduleShippingRecalc==='function') scheduleShippingRecalc();
-});
-</script>
-
-<!-- Google Places / Maps -->
-<script>
-function initMaps() {
-  const addrEl = document.getElementById('address');
-  if (!addrEl) return;
-
-  let tries = 0;
-  const tryInit = () => {
-    tries++;
-    if (window.google && google.maps && google.maps.places) {
-      const bangkokBounds = new google.maps.LatLngBounds(
-        new google.maps.LatLng(13.4, 100.3),
-        new google.maps.LatLng(14.1, 101.1)
-      );
-      const ac = new google.maps.places.Autocomplete(addrEl, {
-        fields: ['formatted_address','geometry','address_components'],
-        componentRestrictions: { country: "th" },
-        bounds: bangkokBounds,
-        strictBounds: false,
-        types: ['address']
-      });
-      ac.addListener('place_changed', () => {
-        const place = ac.getPlace();
-        if (place && place.formatted_address) {
-          addrEl.value = place.formatted_address;
-          setHiddenAddressMeta(place.formatted_address,
-            place.geometry?.location?.lat?.() ?? null,
-            place.geometry?.location?.lng?.() ?? null
-          );
-        }
-        updateCart(); if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
-      });
-      console.log('✅ Google Maps initialized (TH + Bangkok bias, address-only)');
-    } else if (tries < 20) {
-      setTimeout(tryInit, 250);
-    } else {
-      console.warn('⚠️ Google Maps failed to load');
-    }
-  };
-  tryInit();
-}
-</script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBDYO8f-EfbaeQZTyilQpfw1WdsBGfRazE&libraries=places,geometry&language=th&region=TH&callback=initMaps"></script>
+<script src="app.js"></script>
 </body>
 </html>
