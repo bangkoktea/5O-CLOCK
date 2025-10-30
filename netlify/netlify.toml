@@ -1,0 +1,12 @@
+[build]
+  command = ""
+  publish  = "."
+
+[functions]
+  node_bundler = "esbuild"
+  directory    = "netlify/functions"
+
+[[redirects]]
+  from = "/api/lalamove-quote"
+  to   = "/.netlify/functions/lalamove-quote"
+  status = 200
