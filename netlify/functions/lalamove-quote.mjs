@@ -1,104 +1,106 @@
-// netlify/functions/lalamove-quote.mjs
-// Диагностический вариант: помогает понять, какие env не приходят в функцию
+// Реальный расчёт доставки через Lalamove API (с подписью HMAC-SHA256)
+// Работает с ключами из Netlify Environment Variables
 
-const REQD = [
-  'LALAMOVE_API_KEY',
-  'LALAMOVE_API_SECRET',
-  'LALAMOVE_MARKET',
-  'LALAMOVE_COUNTRY',
-  'LALAMOVE_BASE_URL',
-];
+import crypto from "crypto";
 
-function json(status, obj) {
-  return {
-    statusCode: status,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(obj),
-  };
-}
-
-function readEnv() {
-  const env = {};
-  for (const k of REQD) env[k] = process.env[k] || '';
-  return env;
-}
-
-function findMissing(env) {
-  return REQD.filter((k) => !String(env[k] || '').trim());
-}
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 
 export async function handler(event) {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: CORS, body: "" };
+  }
+
+  if (event.httpMethod !== "POST") {
+    return json({ error: "Use POST" }, 405);
+  }
+
   try {
-    // ПИНГ: быстро проверить, видит ли функция переменные окружения
-    const url = new URL(event.rawUrl || `https://x.x${event.path}?${event.queryStringParameters || ''}`);
-    if (event.httpMethod === 'GET' && (url.searchParams.get('ping') === '1' || url.searchParams.get('ping') === 'true')) {
-      const env = readEnv();
-      const missing = findMissing(env);
-      return json( missing.length ? 500 : 200, {
-        ok: missing.length === 0,
-        missing,
-        present: Object.fromEntries(REQD.map(k => [k, !!String(env[k]).trim()])),
-        note: 'Если missing не пуст — проверьте имена переменных, scope (Functions+Runtime) и выполните Clear cache and deploy.',
-      });
-    }
+    const {
+      LALAMOVE_API_KEY,
+      LALAMOVE_API_SECRET,
+      LALAMOVE_MARKET,
+      LALAMOVE_COUNTRY,
+      LALAMOVE_BASE_URL,
+    } = process.env;
 
-    if (event.httpMethod !== 'POST') {
-      return json(405, { error: 'Method Not Allowed' });
-    }
-
-    const env = readEnv();
-    const missing = findMissing(env);
-    if (missing.length) {
-      console.log('[ENV_MISSING]', missing);
-      return json(500, { error: 'Missing Lalamove keys', missing });
-    }
-
-    // --- ниже обычная логика запроса в Lalamove (SANDBOX/PROD одинаково — зависит от BASE_URL) ---
-    const { pickup, dropoff, serviceType = 'MOTORCYCLE' } = JSON.parse(event.body || '{}');
+    const payload = JSON.parse(event.body || "{}");
+    const { pickup, dropoff, serviceType = "MOTORCYCLE" } = payload;
 
     if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
-      return json(400, { error: 'Bad request: pickup/dropoff lat/lng required' });
+      return json({ error: "Bad pickup/dropoff" }, 400);
     }
 
-    // Простейший запрос QRF (quote) — как пример; специфика Lalamove может отличаться,
-    // важна демонстрация работы ключей и roundtrip.
-    const payload = {
-      scheduleAt: 'NOW',
+    const path = "/v3/quotations";
+    const method = "POST";
+    const body = {
+      scheduleAt: "NOW",
       serviceType,
-      specialRequests: [],
       stops: [
-        { coordinates: { lat: String(pickup.lat),  lng: String(pickup.lng)  } },
+        { coordinates: { lat: String(pickup.lat), lng: String(pickup.lng) } },
         { coordinates: { lat: String(dropoff.lat), lng: String(dropoff.lng) } },
       ],
-      requesterContact: { name: '5oclock', phone: '+66' },
+      country: LALAMOVE_COUNTRY,
+      market: LALAMOVE_MARKET,
     };
 
-    // Подпись зависит от актуальной версии API Lalamove; для песочницы часто не требуется строгая подпись.
-    // Ниже – безопасный «пасс» без подписи, чтобы проверить сетку/ключи. Если ваш аккаунт требует подпись,
-    // её можно добавить, но сначала добьёмся, что env приходят.
-    const res = await fetch(`${env.LALAMOVE_BASE_URL}/v3/quotations`, {
-      method: 'POST',
+    const rawBody = JSON.stringify(body);
+    const timestamp = Date.now().toString();
+    const stringToSign = `${timestamp}\r\n${method}\r\n${path}\r\n${rawBody}`;
+
+    // Подпись HMAC
+    const signature = crypto
+      .createHmac("sha256", LALAMOVE_API_SECRET)
+      .update(stringToSign)
+      .digest("hex");
+
+    const authHeader = `hmac ${LALAMOVE_API_KEY}:${signature}:${timestamp}`;
+
+    const response = await fetch(LALAMOVE_BASE_URL + path, {
+      method,
       headers: {
-        'Content-Type': 'application/json',
-        'Market': env.LALAMOVE_MARKET,
-        'Country': env.LALAMOVE_COUNTRY,
-        'Authorization': `hmac ${env.LALAMOVE_API_KEY}:${env.LALAMOVE_API_SECRET}`, // временно, для обхода CORS/проверки
+        "Content-Type": "application/json",
+        Authorization: authHeader,
+        Accept: "application/json",
+        "X-LLM-Market": LALAMOVE_MARKET,
+        "X-LLM-Country": LALAMOVE_COUNTRY,
       },
-      body: JSON.stringify(payload),
+      body: rawBody,
     });
 
-    const text = await res.text();
+    const text = await response.text();
     let data;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { raw: text };
+    }
 
-    return json(res.ok ? 200 : res.status, {
-      ok: res.ok,
-      status: res.status,
-      data,
-    });
+    if (!response.ok) {
+      return json(
+        {
+          ok: false,
+          status: response.status,
+          error: data || text,
+          sent: body,
+        },
+        response.status
+      );
+    }
 
-  } catch (e) {
-    console.error(e);
-    return json(500, { error: e.message || 'Server error' });
+    return json({ ok: true, data });
+  } catch (err) {
+    return json({ ok: false, error: String(err) }, 500);
   }
+}
+
+function json(data, status = 200) {
+  return {
+    statusCode: status,
+    headers: { "Content-Type": "application/json", ...CORS },
+    body: JSON.stringify(data),
+  };
 }
