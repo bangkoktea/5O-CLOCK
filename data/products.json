@@ -1,0 +1,115 @@
+[
+  {
+    "id": "wild-cherry",
+    "name": "Wild Cherry",
+    "img": "images/wild-cherry.jpg",
+    "desc": "Black tea with cherry notes — bright and aromatic.",
+    "options": [
+      {
+        "label": "50 g",
+        "price": 195
+      },
+      {
+        "label": "75 g",
+        "price": 250
+      }
+    ]
+  },
+  {
+    "id": "taiga-blend",
+    "name": "Taiga Blend",
+    "img": "images/taiga-blend.jpg",
+    "desc": "Black tea, berries & forest vibes. Cozy and bold.",
+    "options": [
+      {
+        "label": "50 g",
+        "price": 195
+      },
+      {
+        "label": "75 g",
+        "price": 250
+      }
+    ]
+  },
+  {
+    "id": "rose-strawberry",
+    "name": "Rose Strawberry Fruit Tea",
+    "img": "images/rose-strawberry.jpg",
+    "desc": "Black tea with apples, chokeberry, strawberry & rose petals.",
+    "options": [
+      {
+        "label": "50 g",
+        "price": 195
+      },
+      {
+        "label": "75 g",
+        "price": 250
+      }
+    ]
+  },
+  {
+    "id": "rose-hibiscus",
+    "name": "Rose Hibiscus Fruit Tea",
+    "img": "images/rose-hibiscus.jpg",
+    "desc": "Hibiscus, rose petals & berries for a ruby-red infusion.",
+    "outOfStock": true,
+    "eta": "ETA 7–10 days",
+    "options": [
+      {
+        "label": "50 g",
+        "price": 195
+      },
+      {
+        "label": "75 g",
+        "price": 250
+      }
+    ]
+  },
+  {
+    "id": "citrus-orange",
+    "name": "Citrus Orange Fruit Tea",
+    "img": "images/citrus-orange.jpg",
+    "desc": "Sun-dried oranges, apples & hibiscus. Refreshing citrus aroma.",
+    "outOfStock": true,
+    "eta": "ETA 7–10 days",
+    "options": [
+      {
+        "label": "50 g",
+        "price": 195
+      },
+      {
+        "label": "75 g",
+        "price": 250
+      }
+    ]
+  },
+  {
+    "id": "strawberries-cream",
+    "name": "Strawberries & Cream",
+    "img": "images/strawberries-cream.jpg",
+    "desc": "Black tea with strawberry pieces, goji berries & candied pineapple.",
+    "options": [
+      {
+        "label": "50 g",
+        "price": 195
+      },
+      {
+        "label": "75 g",
+        "price": 250
+      }
+    ]
+  },
+  {
+    "id": "sampler",
+    "name": "Tea Sampler (3×20 g)",
+    "img": "images/hero.jpg",
+    "desc": "Taiga + Strawberries & Cream + Wild Cherry (20 g each).",
+    "sampler": true,
+    "options": [
+      {
+        "label": "Set",
+        "price": 195
+      }
+    ]
+  }
+]
