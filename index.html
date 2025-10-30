@@ -130,5 +130,100 @@
   </div>
 
   <script type="module" src="app.js"></script>
+  <!-- В index.html, перед </body> -->
+<script>
+const PLACE_API = {
+  endpoint: 'https://places.geo.ap-southeast-1.amazonaws.com/places/v0',
+  indexName: 'YOUR_PLACE_INDEX_NAME', // <- AWS Location Place index
+  apiKey: 'YOUR_AWS_LOCATION_API_KEY' // <- ключ AWS Location (клиентский)
+};
+
+// Примитивный автокомплит без внешних UI-библиотек
+(function initGrabMapsAutocomplete(){
+  const input = document.getElementById('address');
+  if(!input) return;
+
+  // Ограничим область поиска грубым bounding box по BKK area
+  const bbox = [100.3,13.4,101.1,14.1]; // [minLon,minLat,maxLon,maxLat]
+
+  let timer=null, menu=null, last=0;
+
+  function pickSuggestion(s){
+    input.value = s.label;
+    // записываем метаданные
+    document.getElementById('addr_lat').value = s.position[1];
+    document.getElementById('addr_lng').value = s.position[0];
+    document.getElementById('addr_city').value = (s.municipality || s.region || '');
+    document.getElementById('addr_postal').value = (s.postalCode || '');
+    if(menu) menu.remove();
+    if (typeof scheduleShippingRecalc === 'function') scheduleShippingRecalc();
+    if (typeof updateCart === 'function') updateCart();
+  }
+
+  function renderMenu(items){
+    if(menu) menu.remove();
+    menu = document.createElement('div');
+    menu.className = 'absolute z-50 bg-white border rounded-xl shadow w-full max-h-72 overflow-auto';
+    items.forEach(it=>{
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='block w-full text-left px-3 py-2 hover:bg-zinc-100';
+      btn.textContent = it.label;
+      btn.onclick = ()=>pickSuggestion(it);
+      menu.appendChild(btn);
+    });
+    input.parentElement.style.position='relative';
+    input.parentElement.appendChild(menu);
+  }
+
+  async function search(q){
+    const url = `${PLACE_API.endpoint}/indexes/${encodeURIComponent(PLACE_API.indexName)}/search/text`;
+    const body = {
+      Text: q,
+      BiasPosition: [100.5018,13.7563], // центр BKK
+      FilterBBox: bbox
+    };
+    const r = await fetch(url, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'X-Amz-Api-Key': PLACE_API.apiKey
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    // Нормализуем и фильтруем по провинциям: Bangkok, Nonthaburi, Samut Prakan
+    const allowedProvinces = /bangkok|krung thep|nonthaburi|samut prakan/i;
+    const items = (data.Results||[])
+      .map(x=>{
+        const p = x.Place||{};
+        const muni = p.Municipality || '';
+        const region = p.Region || '';
+        const label = p.Label || [p.AddressNumber,p.Street,p.Municipality,p.Region,p.PostalCode].filter(Boolean).join(', ');
+        return {
+          label,
+          position: p.Geometry?.Point || p.Geometry?.Point || [p.Geometry?.Point?.[0]||100.5, p.Geometry?.Point?.[1]||13.75],
+          municipality: muni,
+          region: region,
+          postalCode: p.PostalCode || ''
+        };
+      })
+      .filter(it => allowedProvinces.test(it.municipality) || allowedProvinces.test(it.region))
+      .slice(0,8);
+
+    if(items.length) renderMenu(items);
+    else if(menu) menu.remove();
+  }
+
+  input.addEventListener('input', ()=>{
+    const q = input.value.trim();
+    if(timer) clearTimeout(timer);
+    if(q.length<3){ if(menu) menu.remove(); return; }
+    timer = setTimeout(()=>search(q), 220);
+  });
+
+  document.addEventListener('click', (e)=>{ if(menu && !menu.contains(e.target) && e.target!==input) menu.remove(); });
+})();
+</script>
 </body>
 </html>
