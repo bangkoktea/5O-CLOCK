@@ -398,30 +398,52 @@ var scheduleShippingRecalc = debounce(async function(){
 function estimateShipping(subtotal){
   if ((Number(subtotal)||0) >= CONFIG.freeShippingThreshold) return 0;
   if (typeof state.shippingTHB === 'number') return state.shippingTHB;
-  return 70; // fallback
+  // Нет валидной цены -> ничего не показываем
+  return null;
 }
 
+/* ==== ВСТАВЛЕННАЯ НОВАЯ ВЕРСИЯ ==== */
 function updateCart(){
   cartItems.innerHTML = '';
+
+  // 1) Subtotal по товарам (без delivery)
   var subtotal = 0;
-  for (var i=0;i<cart.length;i++){ if (cart[i].id!=='delivery') subtotal += cart[i].price * cart[i].qty; }
+  for (var i = 0; i < cart.length; i++){
+    if (cart[i].id !== 'delivery') subtotal += cart[i].price * cart[i].qty;
+  }
 
+  // 2) Асинхронный пересчёт доставки
   scheduleShippingRecalc();
-  var shipping = estimateShipping(subtotal);
+  var shipping = estimateShipping(subtotal); // number | 0 | null
 
-  var dIdx = -1; for (var j=0;j<cart.length;j++){ if (cart[j].id==='delivery'){ dIdx=j; break; } }
-  if (shipping > 0){
-    var deliveryItem = { id:'delivery', name:'Delivery', variant:'Local courier (estimate)', price:shipping, qty:1, img:'images/delivery.png' };
-    if (dIdx>-1) cart[dIdx] = deliveryItem; else cart.push(deliveryItem);
-  } else if (dIdx>-1){ cart.splice(dIdx,1); }
+  // 3) Удаляем старую delivery-позицию и добавляем только при валидной цене > 0
+  var dIdx = cart.findIndex(i => i.id === 'delivery');
+  if (dIdx > -1) cart.splice(dIdx, 1);
+  if (typeof shipping === 'number' && shipping > 0){
+    cart.push({
+      id: 'delivery',
+      name: 'Delivery',
+      variant: 'Local courier (estimate)',
+      price: shipping,
+      qty: 1,
+      img: 'images/delivery.png'
+    });
+  }
 
+  // 4) Рендер строк корзины + сумм
   var total = 0;
-  for (var k=0;k<cart.length;k++){
-    var item = cart[k]; total += item.price * item.qty;
-    var controls = (item.id==='delivery') ? '' :
+  for (var k = 0; k < cart.length; k++){
+    var item = cart[k];
+    total += item.price * item.qty;
+
+    var controls = (item.id === 'delivery') ? '' :
       '<button class="px-3 py-2 rounded border" data-act="dec" data-idx="'+k+'">−</button>'+
       '<button class="px-3 py-2 rounded border" data-act="inc" data-idx="'+k+'">+</button>';
-    var preorderTag = item.preorder ? ' <span class="ml-1 text-xs text-purple-700 font-semibold">PREORDER</span>' : '';
+
+    var preorderTag = item.preorder
+      ? ' <span class="ml-1 text-xs text-purple-700 font-semibold">PREORDER</span>'
+      : '';
+
     var row = document.createElement('div');
     row.className = 'py-3 flex items-center gap-3';
     row.innerHTML =
@@ -433,21 +455,32 @@ function updateCart(){
     cartItems.appendChild(row);
   }
 
-  var itemsCount = 0; for (var z=0;z<cart.length;z++){ if (cart[z].id!=='delivery') itemsCount += cart[z].qty; }
+  var itemsCount = cart.filter(i => i.id !== 'delivery').reduce((a,b)=>a + b.qty, 0);
   cartCount.textContent = itemsCount;
-  fabCount.textContent = itemsCount;
+  fabCount.textContent  = itemsCount;
+
   cartSubtotal.textContent = fmt(subtotal);
-  mobileSubtotal.textContent = fmt(subtotal + shipping);
-  shippingCostEl.textContent = fmt(shipping);
-  cartTotal.textContent = fmt(total);
-  if (shippingRow) shippingRow.classList.toggle('hidden', shipping === 0);
 
-  var name = document.getElementById('custName').value.trim();
-  var phone = document.getElementById('custPhone').value.trim();
+  if (typeof shipping === 'number'){ // 0 (free) или >0
+    shippingCostEl.textContent = fmt(Math.max(0, shipping));
+    shippingRow.classList.toggle('hidden', !(shipping > 0)); // скрыть если 0
+    mobileSubtotal.textContent = fmt(subtotal + Math.max(0, shipping));
+    cartTotal.textContent      = fmt(total); // total уже включает delivery-позицию при >0
+  } else {
+    // доставки пока нет (нет координат/не БКК) — не показываем цену и не учитываем в total
+    shippingCostEl.textContent = '—';
+    shippingRow.classList.add('hidden');
+    mobileSubtotal.textContent = fmt(subtotal);
+    cartTotal.textContent      = fmt(subtotal);
+  }
+
+  // Доступность checkout
+  var name    = document.getElementById('custName').value.trim();
+  var phone   = document.getElementById('custPhone').value.trim();
   var address = document.getElementById('address').value.trim();
-  var canCheckout = itemsCount>0 && name && phone && address;
-  checkoutBtn.disabled = !canCheckout;
+  checkoutBtn.disabled = !(itemsCount > 0 && name && phone && address);
 
+  // Текст для LINE/Email
   var lines = cart.map(function(i){
     return '• '+i.name+(i.variant?' ('+i.variant+')':'')+(i.preorder?' [PREORDER]':'')+' x'+i.qty+' — '+CONFIG.currency+' '+i.price;
   }).join('\n');
@@ -456,17 +489,60 @@ function updateCart(){
     ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
     : '';
 
-  var msg = "Order from 5 o'clock Tea\n" + lines +
-            '\n\nSubtotal: '+fmt(subtotal)+
-            (shipping>0?'\nDelivery: '+fmt(shipping):'')+
-            '\nTotal: '+fmt(total)+ distanceNote +
-            '\n\nName: '+name+
-            '\nPhone: '+phone+
-            '\nAddress: '+address;
-  checkoutBtn.setAttribute('data-msg', msg);
+  // totalInMsg — как на экране: если доставки нет (null) — только товары
+  var totalInMsg = (typeof shipping === 'number') ? total : subtotal;
 
-  var mailBody = encodeURIComponent(msg);
-  emailBtn.href = "mailto:5OCLOCK@GMAIL.COM?subject=" + encodeURIComponent("Order — 5 o'clock Tea") + "&body=" + mailBody;
+  var msg = "Order from 5 o'clock Tea\n" + lines +
+            '\n\nSubtotal: ' + fmt(subtotal) +
+            ((typeof shipping === 'number' && shipping > 0) ? '\nDelivery: ' + fmt(shipping) : '') +
+            '\nTotal: ' + fmt(totalInMsg) + distanceNote +
+            '\n\nName: ' + name +
+            '\nPhone: ' + phone +
+            '\nAddress: ' + address;
+
+  checkoutBtn.setAttribute('data-msg', msg);
+  emailBtn.href = "mailto:5OCLOCK@GMAIL.COM?subject=" +
+                  encodeURIComponent("Order — 5 o'clock Tea") +
+                  "&body=" + encodeURIComponent(msg);
+}
+
+/* ==== ВСТАВЛЕННАЯ НОВАЯ ВЕРСИЯ ==== */
+function buildOrderMessage(){
+  // Формируем сообщение строго по тем же правилам, что и в updateCart
+  var subtotal = 0;
+  var lines = cart.map(function(i){
+    if (i.id !== 'delivery') subtotal += i.price * i.qty;
+    return '• ' + i.name + (i.variant ? ' ('+i.variant+')' : '') +
+           (i.preorder ? ' [PREORDER]' : '') +
+           ' x' + i.qty + ' — ' + CONFIG.currency + ' ' + i.price;
+  }).join('\n');
+
+  // Берём shipping только если он вычислен (number). Никаких дефолтов типа 70.
+  var shipping = (typeof state.shippingTHB === 'number') ? state.shippingTHB : null;
+
+  var total = (typeof shipping === 'number')
+    ? cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0) // уже включает delivery
+    : subtotal;
+
+  var name    = (document.getElementById('custName').value || '').trim();
+  var phone   = (document.getElementById('custPhone').value || '').trim();
+  var address = (document.getElementById('address').value || '').trim();
+
+  var distanceNote = (typeof state.distanceKm === 'number')
+    ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
+    : '';
+
+  var text =
+    "Order from 5 o'clock Tea\n" +
+    lines +
+    '\n\nSubtotal: ' + fmt(subtotal) +
+    ((typeof shipping === 'number' && shipping > 0) ? '\nDelivery: ' + fmt(shipping) : '') +
+    '\nTotal: ' + fmt(total) + distanceNote +
+    '\n\nName: ' + name +
+    '\nPhone: ' + phone +
+    '\nAddress: ' + address;
+
+  return { text, subject: "Order — 5 o'clock Tea (" + fmt(total) + ")" };
 }
 
 // qty/delete controls
@@ -553,43 +629,6 @@ fabCart.addEventListener('click', function(){ cartDrawer.classList.remove('hidde
 mobileCheckoutBtn.addEventListener('click', function(){ cartDrawer.classList.remove('hidden'); });
 
 // === ORDER MESSAGE BUILDER (LINE/Email) ===
-function buildOrderMessage(){
-  var subtotal = 0;
-  var lines = cart.map(function(i){
-    if (i.id !== 'delivery') subtotal += i.price * i.qty;
-    return '• ' + i.name + (i.variant ? ' ('+i.variant+')' : '') +
-           (i.preorder ? ' [PREORDER]' : '') +
-           ' x' + i.qty + ' — ' + CONFIG.currency + ' ' + i.price;
-  }).join('\n');
-
-  var shipping = (typeof state.shippingTHB === 'number')
-    ? state.shippingTHB
-    : ((subtotal >= CONFIG.freeShippingThreshold) ? 0 : 70);
-
-  var total = cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
-
-  var name = (document.getElementById('custName').value || '').trim();
-  var phone = (document.getElementById('custPhone').value || '').trim();
-  var address = (document.getElementById('address').value || '').trim();
-
-  var distanceNote = (typeof state.distanceKm === 'number')
-    ? ('\nDistance (approx): ' + state.distanceKm.toFixed(1) + ' km')
-    : '';
-
-  var text =
-    "Order from 5 o'clock Tea\n" +
-    lines +
-    '\n\nSubtotal: ' + fmt(subtotal) +
-    (shipping>0 ? '\nDelivery: ' + fmt(shipping) : '') +
-    '\nTotal: ' + fmt(total) + distanceNote +
-    '\n\nName: ' + name +
-    '\nPhone: ' + phone +
-    '\nAddress: ' + address;
-
-  return { text, subject: "Order — 5 o'clock Tea (" + fmt(total) + ")" };
-}
-
-// === Email href ===
 emailBtn.addEventListener('click', function(){
   var m = buildOrderMessage();
   this.href = "mailto:5OCLOCK@GMAIL.COM?subject=" +
