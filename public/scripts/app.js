@@ -30,6 +30,7 @@ const checkoutBtn = document.getElementById("checkoutBtn");
 const addrEl = document.getElementById("address");
 const nameEl = document.getElementById("custName");
 const phoneEl = document.getElementById("custPhone");
+const mobileCheckoutBtn = document.getElementById("mobileCheckoutBtn");
 
 let cart = [];
 let lastQuote = null;
@@ -65,9 +66,10 @@ function estimateFromApi(pickup, dropoff){
 }
 
 function parseZipFromAddress(text){
-  const m = (text||"").match(/10\d{3}\b/);
+  const m = (text || "").match(/\b10\d{3}\b/);
   return m ? m[0] : "";
 }
+
 function isBangkokArea(text){
   return /(bangkok|krung thep|nonthaburi|samut\s*prakan)/i.test(text || "");
 }
@@ -151,10 +153,25 @@ async function openLineWithMessage() {
 function wireCheckout(){
   const setMsgAttr = () => {
     const m = buildOrderMessage();
-    const msg = String(m?.text ?? '');   // <— гарантируем строку
-    document.getElementById('checkoutBtn')?.setAttribute('data-msg', msg);
-    document.getElementById('mobileCheckoutBtn')?.setAttribute('data-msg', msg);
+    const msg = String(m?.text ?? '');
+    checkoutBtn?.setAttribute('data-msg', msg);
+    mobileCheckoutBtn?.setAttribute('data-msg', msg);
   };
+
+  // если уже есть updateCart, оборачиваем — чтобы data-msg обновлялся вместе с корзиной
+  if (typeof window.updateCart === 'function') {
+    const originalUpdate = window.updateCart;
+    window.updateCart = function(){
+      originalUpdate.apply(this, arguments);
+      setMsgAttr();
+    };
+  }
+  setMsgAttr();
+
+  // ОДИН корректный обработчик на каждую кнопку
+  checkoutBtn?.addEventListener('click', (e) => { e.preventDefault(); openLineWithMessage(); });
+  mobileCheckoutBtn?.addEventListener('click', (e) => { e.preventDefault(); openLineWithMessage(); });
+}
 
   // если updateCart уже есть — «подмешиваемся» и обновляем data-msg
   if (typeof window.updateCart === 'function') {
