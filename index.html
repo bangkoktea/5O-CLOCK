@@ -15,6 +15,97 @@
   .card{border-radius:1rem;box-shadow:0 8px 24px rgba(0,0,0,.08)}
 </style>
 </head>
+  <script>
+/* ================== CONFIG (with safe fallback) ================== */
+const CONFIG = {
+  currency: 'THB',
+  lineId: '@924uwcib',
+  freeShippingThreshold: 500,
+  shippingCalc: {
+    pickupAddress: "Bangkok, Ramkhamkhaeng 2, Indy 38/71",
+    baseTHB: 50, perKm_0_5: 0, perKm_5_15: 10, perKm_15p: 15, minChargeTHB: 0
+  },
+  products: [] // будет заполнено из /data/products.json или дефолтом
+};
+function fmt(v){ return CONFIG.currency + ' ' + Number(v).toLocaleString('en-US'); }
+
+/* ===== Try load products from /data/products.json with fallback ===== */
+const DEFAULT_PRODUCTS = [
+  { id:'wild-cherry', name:'Wild Cherry', img:'images/wild-cherry.jpg',
+    options:[{label:'50 g',price:195},{label:'75 g',price:250}], desc:'Black tea with cherry notes — bright and aromatic.' },
+  { id:'taiga-blend', name:'Taiga Blend', img:'images/taiga-blend.jpg',
+    options:[{label:'50 g',price:195},{label:'75 g',price:250}], desc:'Black tea, berries & forest vibes. Cozy and bold.' },
+  { id:'rose-strawberry', name:'Rose Strawberry Fruit Tea', img:'images/rose-strawberry.jpg',
+    options:[{label:'50 g',price:195},{label:'75 g',price:250}], desc:'Black tea with apples, chokeberry, strawberry & rose petals.' },
+  { id:'rose-hibiscus', name:'Rose Hibiscus Fruit Tea', img:'images/rose-hibiscus.jpg',
+    options:[{label:'50 g',price:195},{label:'75 g',price:250}], desc:'Hibiscus, rose petals & berries for a ruby-red infusion.', outOfStock:true },
+  { id:'citrus-orange', name:'Citrus Orange Fruit Tea', img:'images/citrus-orange.jpg',
+    options:[{label:'50 g',price:195},{label:'75 g',price:250}], desc:'Sun-dried oranges, apples & hibiscus. Refreshing citrus aroma.', outOfStock:true },
+  { id:'strawberries-cream', name:'Strawberries & Cream', img:'images/strawberries-cream.jpg',
+    options:[{label:'50 g',price:195},{label:'75 g',price:250}], desc:'Black tea with strawberry pieces, goji berries & candied pineapple.' },
+  { id:'sampler', name:'Tea Sampler (3×20 g)', img:'images/hero.jpg',
+    options:[{label:'Set',price:195}], desc:'Taiga + Strawberries & Cream + Wild Cherry (20 g each).' }
+];
+
+async function loadProducts(){
+  try{
+    const res = await fetch('./data/products.json?ts=' + Date.now(), {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!Array.isArray(json) || json.length === 0) throw new Error('Empty array');
+    CONFIG.products = json;
+    console.log('✅ products.json loaded:', json.length);
+  }catch(e){
+    console.warn('⚠️ products.json not loaded, using DEFAULT_PRODUCTS. Reason:', e);
+    CONFIG.products = DEFAULT_PRODUCTS;
+  }
+}
+
+/* ================== RENDER PRODUCTS (safe) ================== */
+function renderProducts(){
+  const grid = document.getElementById('productGrid');
+  if (!grid){ console.error('#productGrid not found'); return; }
+  grid.innerHTML = '';
+  CONFIG.products.forEach(p=>{
+    const card = document.createElement('article');
+    card.className = 'card bg-white overflow-hidden flex flex-col h-full';
+    const figure = document.createElement('div');
+    figure.className = 'prod-figure w-full h-[320px] sm:h-[340px] bg-[#f9f6ef] flex items-center justify-center';
+    const img = document.createElement('img');
+    img.src = p.img; img.alt = p.name; img.className='w-full h-full object-contain p-2';
+    img.onerror = function(){ this.src='https://placehold.co/600x600?text='+encodeURIComponent(p.name); };
+    figure.appendChild(img); card.appendChild(figure);
+
+    const body = document.createElement('div'); body.className='p-5 flex flex-col h-full';
+    const h3 = document.createElement('h3'); h3.className='logo text-lg sm:text-xl'; h3.textContent=p.name; body.appendChild(h3);
+
+    if (p.outOfStock){
+      const badge = document.createElement('p'); badge.className='text-purple-700 text-sm mt-1 font-semibold'; badge.textContent='Preorder only';
+      body.appendChild(badge);
+    }
+    const desc = document.createElement('p'); desc.className='mt-1 text-sm text-zinc-600'; desc.textContent=p.desc||''; body.appendChild(desc);
+
+    const row = document.createElement('div'); row.className='mt-3 flex items-center gap-3';
+    const label = document.createElement('label'); label.className='text-sm'; label.textContent='Size';
+    const select = document.createElement('select'); select.className='sizeSel border rounded-full px-3 py-2 text-sm';
+    select.innerHTML = (p.options||[]).map((o,i)=>`<option value="${i}">${o.label} — ${fmt(o.price)}</option>`).join('');
+    row.appendChild(label); row.appendChild(select); body.appendChild(row);
+
+    const btn = document.createElement('button');
+    btn.dataset.id = p.id;
+    btn.className = 'btn addBtn mt-auto w-full px-4 py-3 rounded-full text-sm font-semibold ' + (p.outOfStock ? 'bg-purple-600 text-white' : 'bg-black text-white');
+    btn.textContent = p.outOfStock ? 'Preorder' : 'Add to cart';
+    body.appendChild(btn);
+
+    card.appendChild(body); grid.appendChild(card);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await loadProducts();
+  renderProducts();
+});
+</script>
 <body class="sans bg-[#faf8f5] text-zinc-800">
 <header class="sticky top-0 z-40 bg-[#faf8f5]/90 backdrop-blur border-b border-zinc-200">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
