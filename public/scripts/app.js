@@ -71,23 +71,104 @@ function parseZipFromAddress(text){
 function isBangkokArea(text){
   return /(bangkok|krung thep|nonthaburi|samut\s*prakan)/i.test(text || "");
 }
-function buildOrderMessage(){
-  const lines = cart.map(i => `• ${i.name}${i.variant?` (${i.variant})`:""}${i.preorder?" [PREORDER]":""} x${i.qty} — ${CONFIG.currency} ${i.price}`).join("\n");
-  const subtotal = cart.filter(i => i.id!=="delivery").reduce((s,i)=>s+i.price*i.qty,0);
-  const shipping = (lastQuote && typeof lastQuote.priceTHB === "number") ? lastQuote.priceTHB : (subtotal >= CONFIG.freeShippingThreshold ? 0 : 70);
-  const total = subtotal + (shipping||0);
-  const distanceNote = lastQuote ? `\nDistance (approx): ${lastQuote.distanceKm} km` : "";
+/* ===== NEW: LINE checkout & message builder ===== */
+
+function buildOrderMessage() {
+  const lines = (window.cart || []).map(i =>
+    `• ${i.name}${i.variant ? ' ('+i.variant+')' : ''}${i.preorder ? ' [PREORDER]' : ''} x${i.qty} — THB ${i.price}`
+  ).join('\n');
+
+  const subtotal = (window.cart || []).reduce((s,i)=> i.id!=='delivery' ? s + i.price*i.qty : s, 0);
+  const shipping = (typeof window.state?.shippingTHB === 'number')
+    ? window.state.shippingTHB
+    : (subtotal >= 500 ? 0 : 70);
+  const total = (window.cart || []).reduce((s,i)=> s + i.price*i.qty, 0);
+
+  const name    = (document.getElementById('custName')?.value || '').trim();
+  const phone   = (document.getElementById('custPhone')?.value || '').trim();
+  const address = (document.getElementById('address')?.value || '').trim();
+
+  const distanceNote = (typeof window.state?.distanceKm === 'number')
+    ? (`\nDistance (approx): ${window.state.distanceKm.toFixed(1)} km`)
+    : '';
+
   const text =
     "Order from 5 o'clock Tea\n" + lines +
-    `\n\nSubtotal: ${fmt(subtotal)}` +
-    (shipping?`\nDelivery: ${fmt(shipping)}`:"") +
-    `\nTotal: ${fmt(total)}${distanceNote}` +
-    `\n\nName: ${(nameEl.value||"").trim()}` +
-    `\nPhone: ${(phoneEl.value||"").trim()}` +
-    `\nAddress: ${(addrEl.value||"").trim()}`;
-  return text;
+    `\n\nSubtotal: THB ${subtotal}` +
+    (shipping>0 ? `\nDelivery: THB ${shipping}` : '') +
+    `\nTotal: THB ${total}${distanceNote}` +
+    `\n\nName: ${name}\nPhone: ${phone}\nAddress: ${address}`;
+
+  return { text, subject: `Order — 5 o'clock Tea (THB ${total})` };
 }
 
+function isMobile() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+}
+
+async function openLineWithMessage() {
+  const { text } = buildOrderMessage();
+  const lineId = '@924uwcib';
+
+  const httpsDeep = 'https://line.me/R/oaMessage/' + encodeURIComponent(lineId) + '/?' +
+                    encodeURIComponent(text).replace(/%0A/g, '%0A');
+  const appDeep = 'line://oaMessage/' + encodeURIComponent(lineId) + '/?' +
+                  encodeURIComponent(text).replace(/%0A/g, '%0A');
+
+  if (isMobile()) {
+    let opened = false;
+    try { opened = !!window.open(appDeep, '_blank'); } catch(_) {}
+    if (!opened) { try { opened = !!window.open(httpsDeep, '_blank'); } catch(_) {} }
+    if (!opened) {
+      try { await navigator.clipboard.writeText(text); } catch(_){}
+      alert('Order text copied. Paste it into LINE.');
+      window.open('https://line.me/R/ti/p/' + encodeURIComponent(lineId), '_blank');
+    }
+    return;
+  }
+
+  let opened = false;
+  try { opened = !!window.open(httpsDeep, '_blank'); } catch(_) {}
+  try { await navigator.clipboard.writeText(text); } catch(_){}
+  if (!opened) {
+    alert('Could not open LINE automatically. The order text is copied — paste it into the chat.');
+    window.open('https://line.me/R/ti/p/' + encodeURIComponent(lineId), '_blank');
+  }
+}
+
+function wireCheckout(){
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  const mobileCheckoutBtn = document.getElementById('mobileCheckoutBtn');
+
+  const setMsgAttr = () => {
+    const m = buildOrderMessage();
+    checkoutBtn?.setAttribute('data-msg', m.text);
+    mobileCheckoutBtn?.setAttribute('data-msg', m.text);
+  };
+
+  // если updateCart уже есть — «подмешиваемся» и обновляем data-msg
+  if (typeof window.updateCart === 'function') {
+    const originalUpdate = window.updateCart;
+    window.updateCart = function(){
+      originalUpdate.apply(this, arguments);
+      setMsgAttr();
+    };
+  }
+  setMsgAttr();
+
+  checkoutBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openLineWithMessage();
+  });
+  mobileCheckoutBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openLineWithMessage();
+  });
+}
+
+// Запускаем, когда DOM готов — чтобы элементы уже существовали
+document.addEventListener('DOMContentLoaded', () => { wireCheckout(); });
+/* ===== /NEW ===== */
 function updateCart(){
   cartItems.innerHTML = "";
   let subtotal = 0;
