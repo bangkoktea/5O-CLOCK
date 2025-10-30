@@ -107,29 +107,41 @@ function isMobile() {
 }
 
 async function openLineWithMessage() {
-  const { text } = buildOrderMessage();
+  // берём СТРОКУ, даже если где-то вернулся объект
+  const built = buildOrderMessage();
+  const msg = String(built?.text ?? built ?? '');
+
   const lineId = '@924uwcib';
 
-  const httpsDeep = 'https://line.me/R/oaMessage/' + encodeURIComponent(lineId) + '/?' +
-                    encodeURIComponent(text).replace(/%0A/g, '%0A');
-  const appDeep = 'line://oaMessage/' + encodeURIComponent(lineId) + '/?' +
-                  encodeURIComponent(text).replace(/%0A/g, '%0A');
+  // всегда сначала https (работает везде), затем app-схема только на мобилке
+  const httpsDeep = 'https://line.me/R/oaMessage/' +
+    encodeURIComponent(lineId) + '/?' +
+    encodeURIComponent(msg).replace(/%0A/g, '%0A');
 
-  if (isMobile()) {
+  const appDeep = 'line://oaMessage/' +
+    encodeURIComponent(lineId) + '/?' +
+    encodeURIComponent(msg).replace(/%0A/g, '%0A');
+
+  // определяем мобильный
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+  if (mobile) {
+    // на мобилке сперва пробуем app-схему, затем https
     let opened = false;
     try { opened = !!window.open(appDeep, '_blank'); } catch(_) {}
     if (!opened) { try { opened = !!window.open(httpsDeep, '_blank'); } catch(_) {} }
     if (!opened) {
-      try { await navigator.clipboard.writeText(text); } catch(_){}
+      try { await navigator.clipboard.writeText(msg); } catch(_){}
       alert('Order text copied. Paste it into LINE.');
       window.open('https://line.me/R/ti/p/' + encodeURIComponent(lineId), '_blank');
     }
     return;
   }
 
+  // десктоп: только https-deeplink + копируем текст
   let opened = false;
   try { opened = !!window.open(httpsDeep, '_blank'); } catch(_) {}
-  try { await navigator.clipboard.writeText(text); } catch(_){}
+  try { await navigator.clipboard.writeText(msg); } catch(_) {}
   if (!opened) {
     alert('Could not open LINE automatically. The order text is copied — paste it into the chat.');
     window.open('https://line.me/R/ti/p/' + encodeURIComponent(lineId), '_blank');
