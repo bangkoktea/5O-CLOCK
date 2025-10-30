@@ -1,114 +1,137 @@
-// Netlify serverless: /.netlify/functions/lalamove-quote
-// Вход:  { pickup:{lat,lng}, dropoff:{lat,lng}, serviceType:"MOTORCYCLE"|... }
-// Выход: { priceTHB, currency, etaMinutes, raw }
+// netlify/functions/lalamove-quote.mjs
+// ESM-функция Netlify (Node 18+). Эндпоинт: /.netlify/functions/lalamove-quote
+// Сейчас считает локально "как у Lalamove". Готова к замене на реальный API позже.
 
-export const config = { path: "/.netlify/functions/lalamove-quote" };
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
-const allowedOrigins = [
-  "https://<ВАШ_домен_GitHub_Pages>", // напр. https://bangkoktea.github.io
-  "http://localhost:5173",
-  "http://localhost:8080",
-];
-
-function cors(origin){
-  const allow = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-  return {
-    "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
-}
-
-export async function handler(event) {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers: cors(event.headers.origin) };
+export default async (req) => {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS });
   }
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Use POST", headers: cors(event.headers.origin) };
+  if (req.method !== 'POST') {
+    return json({ ok: false, error: 'Use POST' }, 405);
   }
 
   try {
-    const {
-      LALAMOVE_API_KEY,
-      LALAMOVE_API_SECRET,
-      LALAMOVE_BASE_URL = "https://rest.sandbox.lalamove.com",
-      LALAMOVE_MARKET = "TH_BKK",   // при необходимости поменяете
-      LALAMOVE_COUNTRY = "TH"       // TH
-    } = process.env;
+    const payload = await safeJson(req);
+    if (!payload) return json({ ok: false, error: 'Invalid JSON' }, 400);
 
-    if (!LALAMOVE_API_KEY || !LALAMOVE_API_SECRET) {
-      return { statusCode: 500, body: "Missing Lalamove keys", headers: cors(event.headers.origin) };
-    }
+    const { pickup, dropoff, serviceType = 'MOTORCYCLE' } = payload;
 
-    const body = JSON.parse(event.body || "{}");
-    const { pickup, dropoff, serviceType = "MOTORCYCLE" } = body;
+    // Валидация входа
+    const err = validatePoints(pickup, dropoff);
+    if (err) return json({ ok: false, error: err }, 400);
 
-    if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
-      return { statusCode: 400, body: "Bad coordinates", headers: cors(event.headers.origin) };
-    }
+    const distKm = haversine(
+      Number(pickup.lat),
+      Number(pickup.lng),
+      Number(dropoff.lat),
+      Number(dropoff.lng)
+    );
 
-    // Lalamove quotation payload (v3)
-    const payload = {
-      scheduleAt: "NOW",
-      serviceType,           // "MOTORCYCLE" | "CAR" | ...
-      stops: [
-        { coordinates: { lat: String(pickup.lat),  lng: String(pickup.lng)  } },
-        { coordinates: { lat: String(dropoff.lat), lng: String(dropoff.lng) } },
-      ],
-      isRouteOptimized: false,
-      language: "en_TH",
-    };
+    // === Локальный тариф (твои правила) ===
+    const baseTHB = 50;
+    const tier_0_5  = Math.min(distKm, 5) * 0;
+    const tier_5_15 = Math.max(Math.min(distKm, 15) - 5, 0) * 10;
+    const tier_15p  = Math.max(distKm - 15, 0) * 15;
 
-    const path = "/v3/quotations";
-    const method = "POST";
-    const timestamp = Date.now().toString();
-    const requestBody = JSON.stringify(payload);
+    let raw = baseTHB + tier_0_5 + tier_5_15 + tier_15p;
+    const totalRounded = Math.max(0, Math.round(raw / 5) * 5);
 
-    // Lalamove HMAC (timestamp + \n + method + \n + path + \n + body)
-    const stringToSign = `${timestamp}\r\n${method}\r\n${path}\r\n${requestBody}`;
-    const crypto = await import("node:crypto");
-    const signature = crypto.createHmac("sha256", LALAMOVE_API_SECRET)
-                            .update(stringToSign)
-                            .digest("base64");
+    const etaMinutes = estimateETA(distKm, serviceType);
 
-    const headers = {
-      "Content-Type": "application/json; charset=utf-8",
-      "Authorization": `hmac ${LALAMOVE_API_KEY}:${timestamp}:${signature}`,
-      "Market": LALAMOVE_MARKET,      // пример: TH_BKK
-      "Country": LALAMOVE_COUNTRY,    // пример: TH
-      "Request-ID": crypto.randomBytes(8).toString("hex"),
-      "Accept": "application/json",
-    };
-
-    const res = await fetch(LALAMOVE_BASE_URL + path, {
-      method, headers, body: requestBody
+    return json({
+      ok: true,
+      currency: 'THB',
+      serviceType,
+      distanceKm: Number(distKm.toFixed(2)),
+      breakdown: {
+        baseTHB,
+        tier_0_5: Math.round(tier_0_5),
+        tier_5_15: Math.round(tier_5_15),
+        tier_15p: Math.round(tier_15p),
+      },
+      totalFee: totalRounded,
+      etaMinutes,
+      // Пометка источника — сейчас локально; когда подключим реальный API, сменим
+      source: 'local-tariff'
     });
 
-    const raw = await res.json().catch(()=> ({}));
-    if (!res.ok) {
-      return {
-        statusCode: res.status,
-        headers: cors(event.headers.origin),
-        body: JSON.stringify({ error: raw || await res.text() }),
-      };
-    }
+    // === Шаблон для будущего реального Lalamove ===
+    // Если понадобится, добавим здесь:
+    // const quote = await getLalamoveQuoteViaAPI({ pickup, dropoff, serviceType });
+    // return json({ ok:true, ...quote, source:'lalamove' });
 
-    // Простейший парсер цены/ETA (в ответе Lalamove поля могут называться priceBreakdown / totalFee / quotations[0] и т.п.)
-    const price = Number(raw?.totalFee || raw?.price || raw?.totalPrice || 0);
-    const currency = raw?.currency || "THB";
-    const etaMinutes = Number(raw?.estimatedTime || raw?.eta || 0);
-
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json", ...cors(event.headers.origin) },
-      body: JSON.stringify({
-        priceTHB: price,
-        currency,
-        etaMinutes,
-        raw
-      }),
-    };
   } catch (e) {
-    return { statusCode: 500, headers: cors(event.headers.origin), body: JSON.stringify({ error: String(e) }) };
+    return json({ ok: false, error: 'Server error', details: String(e) }, 500);
+  }
+};
+
+/* ----------------- Helpers ----------------- */
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS },
+  });
+}
+
+async function safeJson(req) {
+  try {
+    return await req.json();
+  } catch {
+    return null;
   }
 }
+
+function validatePoints(pickup, dropoff) {
+  if (!pickup || !dropoff) return 'Need { pickup, dropoff }';
+  const nums = [pickup.lat, pickup.lng, dropoff.lat, dropoff.lng].map(Number);
+  if (nums.some((v) => Number.isNaN(v))) return 'lat/lng must be numbers';
+  if (Math.abs(nums[0]) > 90 || Math.abs(nums[2]) > 90) return 'bad latitude';
+  if (Math.abs(nums[1]) > 180 || Math.abs(nums[3]) > 180) return 'bad longitude';
+  return null;
+}
+
+// Haversine distance (km)
+function haversine(lat1, lon1, lat2, lon2) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+// Примерная ETA: скорость и буфер зависят от сервиса
+function estimateETA(km, serviceType) {
+  const speeds = {
+    MOTORCYCLE: 25, // км/ч
+    CAR: 30,
+    VAN: 25,
+  };
+  const speed = speeds[serviceType] || 25;
+  const driving = (km / speed) * 60; // минуты
+  const buffer = 10; // на поиск курьера/погрузку
+  return Math.max(8, Math.round(driving + buffer));
+}
+
+/* ----------------- Заглушка под реальный Lalamove (на будущее) -----------------
+
+// 1) В Netlify → Site configuration → Environment variables добавим:
+   LALAMOVE_PUBLIC_KEY
+   LALAMOVE_SECRET_KEY
+   LALAMOVE_HOST=https://sandbox-rest.lalamove.com  (или боевой)
+// 2) Реализуем запрос к /v3/quotations с HMAC-подписью.
+   Здесь опустил реализацию, чтобы не ломать деплой и не гадать формат подписи:
+   документация Lalamove часто меняется. Когда будешь готов — скажи, добавлю
+   готовый блок кода под твою версию API.
+
+------------------------------------------------------------------------------- */
