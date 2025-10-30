@@ -169,6 +169,42 @@ function wireCheckout(){
 // Запускаем, когда DOM готов — чтобы элементы уже существовали
 document.addEventListener('DOMContentLoaded', () => { wireCheckout(); });
 /* ===== /NEW ===== */
+/* ===== NEW: TH phone auto-prefix (+66) ===== */
+(function thPhoneAutoprefix(){
+  const el = document.getElementById('custPhone');
+  if (!el) return;
+
+  function normalizeTH(v){
+    if (!v) return '';
+    let s = v.replace(/\s+/g,'');
+    if (s.startsWith('00')) s = '+' + s.slice(2);
+    if (s.startsWith('+66')) { s = '+66 ' + s.slice(3).replace(/^0+/, ''); return s; }
+    if (s.startsWith('66'))  { s = '+66 ' + s.slice(2).replace(/^0+/, ''); return s; }
+    if (s.startsWith('0'))   { s = '+66 ' + s.slice(1); return s; }
+    return s.replace(/^\+66$/, '+66 ').replace(/^\+66(?=\d)/, '+66 ');
+  }
+
+  el.addEventListener('focus', () => {
+    if (!el.value.trim()) {
+      el.value = '+66 ';
+      setTimeout(() => { el.selectionStart = el.selectionEnd = el.value.length; }, 0);
+    }
+  });
+
+  const onChange = () => {
+    const before = el.value;
+    const after = normalizeTH(before);
+    if (after !== before) {
+      el.value = after;
+      el.selectionStart = el.selectionEnd = el.value.length;
+    }
+    if (typeof window.updateCart === 'function') window.updateCart();
+  };
+  el.addEventListener('input', onChange);
+  el.addEventListener('paste', () => requestAnimationFrame(onChange));
+  el.addEventListener('blur', () => { el.value = normalizeTH(el.value).trim(); });
+})();
+/* ===== /NEW ===== */
 function updateCart(){
   cartItems.innerHTML = "";
   let subtotal = 0;
