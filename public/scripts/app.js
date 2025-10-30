@@ -137,8 +137,13 @@ async function openLineWithMessage() {
 }
 
 function wireCheckout(){
-  const checkoutBtn = document.getElementById('checkoutBtn');
-  const mobileCheckoutBtn = document.getElementById('mobileCheckoutBtn');
+  const setMsgAttr = () => {
+    const m = buildOrderMessage();
+    const msg = String(m?.text ?? '');   // <— гарантируем строку
+    document.getElementById('checkoutBtn')?.setAttribute('data-msg', msg);
+    document.getElementById('mobileCheckoutBtn')?.setAttribute('data-msg', msg);
+  };
+
 
   const setMsgAttr = () => {
     const m = buildOrderMessage();
