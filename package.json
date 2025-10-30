@@ -1,0 +1,11 @@
+{
+  "name": "5oclock-tea",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "serve public",
+    "dev": "netlify dev",
+    "vercel": "vercel dev"
+  }
+}
