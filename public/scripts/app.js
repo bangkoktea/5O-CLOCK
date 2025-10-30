@@ -156,13 +156,6 @@ function wireCheckout(){
     document.getElementById('mobileCheckoutBtn')?.setAttribute('data-msg', msg);
   };
 
-
-  const setMsgAttr = () => {
-    const m = buildOrderMessage();
-    checkoutBtn?.setAttribute('data-msg', m.text);
-    mobileCheckoutBtn?.setAttribute('data-msg', m.text);
-  };
-
   // если updateCart уже есть — «подмешиваемся» и обновляем data-msg
   if (typeof window.updateCart === 'function') {
     const originalUpdate = window.updateCart;
